@@ -52,12 +52,12 @@ ehthumbs.db
 # Next.js build output
 .next
 
+# Environment variables
+.env
+
 # Nuxt.js build / generate output
 .nuxt
 dist
-
-# Environment variables
-.env
 
 # Gatsby files
 .cache/
