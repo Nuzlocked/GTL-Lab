@@ -17,7 +17,7 @@ interface GameStats {
 }
 
 function AppContent() {
-  const { user, loading, signOut } = useAuth();
+  const { user, profile, loading, signOut } = useAuth();
   const [currentPage, setCurrentPage] = useState<AppState>('settings');
   const [gameSettings, setGameSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
   const [gameStats, setGameStats] = useState<GameStats>({
@@ -77,7 +77,7 @@ function AppContent() {
             </h1>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">
-                Welcome, {user.email}
+                Welcome, {profile?.username || user?.email || 'Trainer'}
               </span>
               <button
                 onClick={handleSignOut}
