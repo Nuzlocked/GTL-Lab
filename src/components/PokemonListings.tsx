@@ -81,18 +81,18 @@ const PokemonListings: React.FC<PokemonListingsProps> = ({
   return (
     <div className="p-1">
       {/* Controls */}
-      <div className="flex items-center justify-end mb-4">
-        <div className="flex items-center gap-3">
-          <select className="bg-gtl-surface-light text-gtl-text border border-gtl-border rounded px-4 py-3 text-lg">
+      <div className="flex items-center justify-end mb-2">
+        <div className="flex items-center gap-2">
+          <select className="bg-gtl-surface-light text-gtl-text border border-gtl-border rounded px-2 py-1 text-sm">
             <option>Select Template</option>
           </select>
-          <button className="bg-gtl-surface-light text-gtl-text border border-gtl-border rounded px-4 py-3 hover:bg-gtl-primary hover:text-white text-lg">
+          <button className="bg-gtl-surface-light text-gtl-text border border-gtl-border rounded px-2 py-1 hover:bg-gtl-primary hover:text-white text-sm">
             Advanced Search
           </button>
           <input 
             type="text" 
             placeholder="Search Pokemon..." 
-            className="bg-gtl-surface-light text-gtl-text border border-gtl-border rounded px-4 py-3 text-lg placeholder-gtl-text-dim w-[576px]"
+            className="bg-gtl-surface-light text-gtl-text border border-gtl-border rounded px-2 py-1 text-sm placeholder-gtl-text-dim w-80"
           />
           <button 
             onClick={handleRefreshClick}
@@ -101,12 +101,12 @@ const PokemonListings: React.FC<PokemonListingsProps> = ({
                 e.preventDefault();
               }
             }}
-            className="bg-gtl-surface-light text-gtl-text border border-gtl-border rounded px-3 py-3 hover:bg-gtl-primary hover:text-white text-lg"
+            className="bg-gtl-surface-light text-gtl-text border border-gtl-border rounded px-2 py-1 hover:bg-gtl-primary hover:text-white text-sm"
             title="Refresh listings"
           >
-            <span style={{fontSize: '20px'}}>🔄</span>
+            <span style={{fontSize: '14px'}}>🔄</span>
           </button>
-          <select className="bg-gtl-surface-light text-gtl-text border border-gtl-border rounded px-6 py-3 text-lg min-w-64 text-center">
+          <select className="bg-gtl-surface-light text-gtl-text border border-gtl-border rounded px-3 py-1 text-sm min-w-32 text-center">
             <option>NEWEST</option>
             <option>OLDEST</option>
             <option>PRICE LOW</option>
@@ -120,13 +120,13 @@ const PokemonListings: React.FC<PokemonListingsProps> = ({
         <table className="w-full">
           <thead>
             <tr className="bg-gtl-header text-gtl-text">
-              <th className="px-4 py-2 text-left border border-gtl-cell-border text-xl font-medium w-72">Pokémon</th>
-              <th className="px-4 py-2 text-left border border-gtl-cell-border text-xl font-medium w-32">Nature</th>
-              <th className="px-2 py-2 text-center border border-gtl-cell-border text-xl font-medium w-56">IVs</th>
-              <th className="px-4 py-2 text-center border border-gtl-cell-border text-xl font-medium w-32">Price</th>
-              <th className="px-4 py-2 text-center border border-gtl-cell-border text-xl font-medium w-36">Start Date</th>
-              <th className="px-4 py-2 text-center border border-gtl-cell-border text-xl font-medium w-36">End Date</th>
-              <th className="px-6 py-2 text-center border border-gtl-cell-border text-xl font-medium w-40">Buy</th>
+              <th className="px-2 py-1 text-left border border-gtl-cell-border text-sm font-medium w-36">Pokémon</th>
+              <th className="px-2 py-1 text-left border border-gtl-cell-border text-sm font-medium w-16">Nature</th>
+              <th className="px-1 py-1 text-center border border-gtl-cell-border text-sm font-medium w-28">IVs</th>
+              <th className="px-2 py-1 text-center border border-gtl-cell-border text-sm font-medium w-24">Price</th>
+              <th className="px-2 py-1 text-center border border-gtl-cell-border text-sm font-medium w-24">Start Date</th>
+              <th className="px-2 py-1 text-center border border-gtl-cell-border text-sm font-medium w-24">End Date</th>
+              <th className="px-3 py-1 text-center border border-gtl-cell-border text-sm font-medium w-28">Buy</th>
             </tr>
           </thead>
           <tbody>
@@ -134,41 +134,41 @@ const PokemonListings: React.FC<PokemonListingsProps> = ({
               // Show empty rows with same structure to maintain exact table dimensions during refresh
               Array.from({ length: Math.max(currentListings.length, 1) }, (_, index) => (
                 <tr key={`empty-${index}`} className="bg-gtl-uniform-bg">
-                  <td className="px-4 py-2 border border-gtl-cell-border">
-                    <div className="flex items-center gap-2">
-                      <div className="relative border border-gtl-cell-border px-6 py-1">
-                        <div className="w-16 h-16 bg-transparent"></div>
-                        <div className="absolute top-0 left-0 w-6 h-6 bg-transparent"></div>
+                  <td className="px-2 py-1 border border-gtl-cell-border">
+                    <div className="flex items-center gap-1">
+                      <div className="relative border border-gtl-cell-border px-3 py-0.5">
+                        <div className="w-8 h-8 bg-transparent"></div>
+                        <div className="absolute top-0 left-0 w-3 h-3 bg-transparent"></div>
                       </div>
                       <div>
-                        <div className="text-transparent text-xl font-medium">
+                        <div className="text-transparent text-sm font-medium">
                           Lv. 99 Placeholder
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-2 text-transparent border border-gtl-cell-border text-xl">Placeholder</td>
-                  <td className="px-2 py-2 border border-gtl-cell-border">
-                    <div className="flex justify-center gap-1 text-xl text-transparent">
-                      <span className="border border-gtl-cell-border px-2 py-1 min-w-12 text-center">31</span>
-                      <span className="border border-gtl-cell-border px-2 py-1 min-w-12 text-center">31</span>
-                      <span className="border border-gtl-cell-border px-2 py-1 min-w-12 text-center">31</span>
-                      <span className="border border-gtl-cell-border px-2 py-1 min-w-12 text-center">31</span>
-                      <span className="border border-gtl-cell-border px-2 py-1 min-w-12 text-center">31</span>
-                      <span className="border border-gtl-cell-border px-2 py-1 min-w-12 text-center">31</span>
+                  <td className="px-2 py-1 text-transparent border border-gtl-cell-border text-sm">Placeholder</td>
+                  <td className="px-1 py-1 border border-gtl-cell-border">
+                    <div className="flex justify-center gap-0.5 text-sm text-transparent">
+                      <span className="border border-gtl-cell-border px-1 py-0.5 min-w-6 text-center">31</span>
+                      <span className="border border-gtl-cell-border px-1 py-0.5 min-w-6 text-center">31</span>
+                      <span className="border border-gtl-cell-border px-1 py-0.5 min-w-6 text-center">31</span>
+                      <span className="border border-gtl-cell-border px-1 py-0.5 min-w-6 text-center">31</span>
+                      <span className="border border-gtl-cell-border px-1 py-0.5 min-w-6 text-center">31</span>
+                      <span className="border border-gtl-cell-border px-1 py-0.5 min-w-6 text-center">31</span>
                     </div>
                   </td>
-                  <td className="px-4 py-2 text-transparent text-center border border-gtl-cell-border text-xl font-medium">
+                  <td className="px-2 py-1 text-transparent text-center border border-gtl-cell-border text-sm font-medium">
                     $99,999
                   </td>
-                  <td className="px-4 py-2 text-transparent text-center border border-gtl-cell-border text-xl">
+                  <td className="px-2 py-1 text-transparent text-center border border-gtl-cell-border text-sm">
                     Just now
                   </td>
-                  <td className="px-4 py-2 text-transparent text-center border border-gtl-cell-border text-xl">
+                  <td className="px-2 py-1 text-transparent text-center border border-gtl-cell-border text-sm">
                     14 days
                   </td>
                   <td className="border border-gtl-cell-border p-0">
-                    <button className="bg-transparent border-2 border-transparent text-transparent text-xl font-medium w-full h-full py-4 px-6">
+                    <button className="bg-transparent border-2 border-transparent text-transparent text-sm font-medium w-full h-full py-2 px-3">
                       Buy
                     </button>
                   </td>
@@ -180,56 +180,56 @@ const PokemonListings: React.FC<PokemonListingsProps> = ({
                     key={listing.id}
                     className="bg-gtl-uniform-bg hover:bg-gtl-primary hover:bg-opacity-20"
                   >
-                  <td className="px-4 py-2 border border-gtl-cell-border">
-                    <div className="flex items-center gap-2">
-                      <div className="relative border border-gtl-cell-border px-6 py-1">
+                  <td className="px-2 py-1 border border-gtl-cell-border">
+                    <div className="flex items-center gap-1">
+                      <div className="relative border border-gtl-cell-border px-3 py-0.5">
                         <img 
                           src={listing.pokemon.sprite} 
                           alt={listing.pokemon.name}
-                          className="w-16 h-16 pixelated"
+                          className="w-8 h-8 pixelated"
                           onError={(e) => {
                             e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjNDQ0IiByeD0iNCIvPgo8dGV4dCB4PSIyMCIgeT0iMjQiIGZpbGw9IiM5OTkiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Pz88L3RleHQ+Cjwvc3ZnPgo=';
                           }}
                         />
-                        <div className={`absolute top-0 left-0 w-6 h-6 ${listing.pokemon.gender === 'male' ? 'bg-blue-400' : 'bg-pink-400'}`}>
+                        <div className={`absolute top-0 left-0 w-3 h-3 ${listing.pokemon.gender === 'male' ? 'bg-blue-400' : 'bg-pink-400'}`}>
                         </div>
                         {listing.pokemon.isShiny && (
-                          <div className="absolute -top-1 -right-1 text-yellow-400 text-2xl">
+                          <div className="absolute -top-0.5 -right-0.5 text-yellow-400 text-sm">
                             ⭐
                           </div>
                         )}
                       </div>
                       <div>
-                        <div className="text-gtl-text text-xl font-medium">
+                        <div className="text-gtl-text text-sm font-medium">
                           Lv. {listing.pokemon.level} {listing.pokemon.name}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-2 text-gtl-text border border-gtl-cell-border text-xl">{listing.nature}</td>
-                  <td className="px-2 py-2 border border-gtl-cell-border">
-                    <div className="flex justify-center gap-1 text-xl text-gtl-text">
-                      <span className={`border border-gtl-cell-border px-2 py-1 min-w-12 text-center ${listing.ivs.hp === 31 ? 'text-green-400' : ''}`}>{listing.ivs.hp}</span>
-                      <span className={`border border-gtl-cell-border px-2 py-1 min-w-12 text-center ${listing.ivs.attack === 31 ? 'text-green-400' : ''}`}>{listing.ivs.attack}</span>
-                      <span className={`border border-gtl-cell-border px-2 py-1 min-w-12 text-center ${listing.ivs.defense === 31 ? 'text-green-400' : ''}`}>{listing.ivs.defense}</span>
-                      <span className={`border border-gtl-cell-border px-2 py-1 min-w-12 text-center ${listing.ivs.spAttack === 31 ? 'text-green-400' : ''}`}>{listing.ivs.spAttack}</span>
-                      <span className={`border border-gtl-cell-border px-2 py-1 min-w-12 text-center ${listing.ivs.spDefense === 31 ? 'text-green-400' : ''}`}>{listing.ivs.spDefense}</span>
-                      <span className={`border border-gtl-cell-border px-2 py-1 min-w-12 text-center ${listing.ivs.speed === 31 ? 'text-green-400' : ''}`}>{listing.ivs.speed}</span>
+                  <td className="px-2 py-1 text-gtl-text border border-gtl-cell-border text-sm">{listing.nature}</td>
+                  <td className="px-1 py-1 border border-gtl-cell-border">
+                    <div className="flex justify-center gap-0.5 text-sm text-gtl-text">
+                      <span className={`border border-gtl-cell-border px-1 py-0.5 min-w-6 text-center ${listing.ivs.hp === 31 ? 'text-green-400' : ''}`}>{listing.ivs.hp}</span>
+                      <span className={`border border-gtl-cell-border px-1 py-0.5 min-w-6 text-center ${listing.ivs.attack === 31 ? 'text-green-400' : ''}`}>{listing.ivs.attack}</span>
+                      <span className={`border border-gtl-cell-border px-1 py-0.5 min-w-6 text-center ${listing.ivs.defense === 31 ? 'text-green-400' : ''}`}>{listing.ivs.defense}</span>
+                      <span className={`border border-gtl-cell-border px-1 py-0.5 min-w-6 text-center ${listing.ivs.spAttack === 31 ? 'text-green-400' : ''}`}>{listing.ivs.spAttack}</span>
+                      <span className={`border border-gtl-cell-border px-1 py-0.5 min-w-6 text-center ${listing.ivs.spDefense === 31 ? 'text-green-400' : ''}`}>{listing.ivs.spDefense}</span>
+                      <span className={`border border-gtl-cell-border px-1 py-0.5 min-w-6 text-center ${listing.ivs.speed === 31 ? 'text-green-400' : ''}`}>{listing.ivs.speed}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-2 text-gtl-text text-center border border-gtl-cell-border text-xl font-medium">
+                  <td className="px-2 py-1 text-gtl-text text-center border border-gtl-cell-border text-sm font-medium">
                     {formatPrice(listing.price)}
                   </td>
-                  <td className="px-4 py-2 text-gtl-text text-center border border-gtl-cell-border text-xl">
+                  <td className="px-2 py-1 text-gtl-text text-center border border-gtl-cell-border text-sm">
                     {listing.startDate}
                   </td>
-                  <td className="px-4 py-2 text-gtl-text text-center border border-gtl-cell-border text-xl">
+                  <td className="px-2 py-1 text-gtl-text text-center border border-gtl-cell-border text-sm">
                     {listing.endDate}
                   </td>
                   <td className="border border-gtl-cell-border p-0">
                     <button 
                       onClick={() => handleBuyClick(listing)}
-                      className="bg-gray-500 hover:bg-gray-600 text-white text-xl font-medium w-full h-full py-4 px-6 border-2 border-gray-600 shadow-inner"
+                      className="bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium w-full h-full py-2 px-3 border-2 border-gray-600 shadow-inner"
                     >
                       Buy
                     </button>
@@ -242,17 +242,17 @@ const PokemonListings: React.FC<PokemonListingsProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="mt-4 text-center text-gtl-text-dim">
-        <p className="text-lg">Showing {startIndex + 1} to {Math.min(endIndex, listings.length)} of {TOTAL_LISTINGS.toLocaleString()} listings.</p>
+      <div className="mt-2 text-center text-gtl-text-dim">
+        <p className="text-sm">Showing {startIndex + 1} to {Math.min(endIndex, listings.length)} of {TOTAL_LISTINGS.toLocaleString()} listings.</p>
       </div>
 
       {/* Pagination */}
-      <div className="mt-4 flex justify-center">
-        <div className="flex items-center gap-2">
+      <div className="mt-2 flex justify-center">
+        <div className="flex items-center gap-1">
           <button 
             onClick={() => handlePageChange(1)}
             disabled={currentPage === 1}
-            className={`border border-gtl-border rounded px-3 py-2 text-lg ${
+            className={`border border-gtl-border rounded px-2 py-1 text-sm ${
               currentPage === 1 
                 ? 'bg-gtl-surface text-gtl-text-dim cursor-not-allowed' 
                 : 'bg-gtl-surface-light text-gtl-text hover:bg-gtl-primary hover:text-white'
@@ -266,7 +266,7 @@ const PokemonListings: React.FC<PokemonListingsProps> = ({
             <button 
               key={page}
               onClick={() => handlePageChange(page)}
-              className={`border border-gtl-border rounded px-3 py-2 text-lg ${
+              className={`border border-gtl-border rounded px-2 py-1 text-sm ${
                 currentPage === page
                   ? 'bg-gtl-primary text-white'
                   : 'bg-gtl-surface-light text-gtl-text hover:bg-gtl-primary hover:text-white'
@@ -279,7 +279,7 @@ const PokemonListings: React.FC<PokemonListingsProps> = ({
           <button 
             onClick={() => handlePageChange(totalPages)}
             disabled={currentPage === totalPages}
-            className={`border border-gtl-border rounded px-3 py-2 text-lg ${
+            className={`border border-gtl-border rounded px-2 py-1 text-sm ${
               currentPage === totalPages 
                 ? 'bg-gtl-surface text-gtl-text-dim cursor-not-allowed' 
                 : 'bg-gtl-surface-light text-gtl-text hover:bg-gtl-primary hover:text-white'

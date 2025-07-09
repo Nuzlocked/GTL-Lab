@@ -134,14 +134,21 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
 
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+      <div className="max-w-sm w-full space-y-6">
         {/* Main auth card with GTL theme */}
-        <div className="bg-gtl-surface rounded-lg shadow-lg border border-gtl-border p-8">
+        <div className="bg-gtl-surface rounded-lg shadow-lg border border-gtl-border p-6">
           <div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gtl-text">
-              Pokemon GTL Lab
+            <div className="flex justify-center mb-4">
+              <img 
+                src="/favicon.png" 
+                alt="GTL Lab Logo" 
+                className="w-12 h-12"
+              />
+            </div>
+            <h2 className="mt-4 text-center text-2xl font-extrabold text-gtl-text">
+              Welcome to GTL Lab!
             </h2>
-            <h3 className="mt-2 text-center text-xl font-bold text-gtl-text">
+            <h3 className="mt-2 text-center text-lg font-bold text-gtl-text">
               {isLogin ? 'Sign in to your account' : 'Create new account'}
             </h3>
             <p className="mt-2 text-center text-sm text-gtl-text-dim">
@@ -160,11 +167,11 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
             </p>
           </div>
           
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-            <div className="space-y-4">
+          <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+            <div className="space-y-3">
               {!isLogin && (
                 <div>
-                  <label htmlFor="username" className="block text-sm font-medium text-gtl-text mb-2">
+                  <label htmlFor="username" className="block text-sm font-medium text-gtl-text mb-1">
                     Username
                   </label>
                   <input
@@ -190,7 +197,7 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
               )}
               
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gtl-text mb-2">
+                <label htmlFor="email" className="block text-sm font-medium text-gtl-text mb-1">
                   Email address
                 </label>
                 <input
@@ -207,7 +214,7 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
               </div>
               
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gtl-text mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-gtl-text mb-1">
                   Password
                 </label>
                 <input
@@ -234,7 +241,7 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
               </div>
             )}
 
-            <div>
+            <div className="pt-2">
               <button
                 type="submit"
                 disabled={loading}

@@ -80,13 +80,17 @@ function AppContent() {
   return (
     <div className="App">
       {/* Header with user info and sign out */}
-      <header className="bg-gtl-header shadow-lg border-b border-gtl-border">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-gtl-header shadow-lg border-b border-gtl-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3">
-              <div className="text-2xl">🎮</div>
+              <img 
+                src="/favicon.png" 
+                alt="GTL Lab Logo" 
+                className="w-8 h-8"
+              />
               <h1 className="text-xl font-bold text-gtl-text">
-                Pokemon GTL Lab
+                GTL Lab
               </h1>
             </div>
             <div className="flex items-center space-x-6">
@@ -108,7 +112,6 @@ function AppContent() {
                 onClick={handleSignOut}
                 className="bg-gtl-surface-light hover:bg-red-600 text-gtl-text hover:text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center space-x-2"
               >
-                <span>🚪</span>
                 <span>Sign Out</span>
               </button>
             </div>

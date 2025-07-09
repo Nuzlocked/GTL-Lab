@@ -43,60 +43,60 @@ const ResultsPage: React.FC<ResultsPageProps> = ({
   const performance = getPerformanceGrade();
 
   return (
-    <div className="min-h-screen p-3 flex items-center justify-center">
-      <div className="max-w-4xl w-full">
+    <div className="h-screen pt-20 flex items-center justify-center px-3">
+      <div className="max-w-2xl w-full">
         {/* Header */}
-        <div className="bg-gtl-header rounded-t-lg p-6 border-b border-gtl-border">
+        <div className="bg-gtl-header rounded-t-lg p-3 border-b border-gtl-border">
           <div className="text-center">
-            <h1 className="text-3xl font-bold text-gtl-text mb-2">🎉 Game Complete!</h1>
-            <p className="text-gtl-text-dim text-lg">Here's how you performed</p>
+            <h1 className="text-lg font-bold text-gtl-text mb-1">🎉 Game Complete!</h1>
+            <p className="text-gtl-text-dim text-sm">Here's how you performed</p>
           </div>
         </div>
 
         {/* Results Panel */}
-        <div className="bg-gtl-surface rounded-b-lg p-8">
+        <div className="bg-gtl-surface rounded-b-lg p-4">
           {/* Performance Grade */}
-          <div className="text-center mb-8">
-            <div className={`text-8xl font-bold ${performance.color} mb-2`}>
+          <div className="text-center mb-4">
+            <div className={`text-4xl font-bold ${performance.color} mb-1`}>
               {performance.grade}
             </div>
-            <div className="text-2xl text-gtl-text font-medium mb-2">
+            <div className="text-lg text-gtl-text font-medium mb-1">
               {performance.description}
             </div>
-            <div className="text-lg text-gtl-text-dim">
+            <div className="text-sm text-gtl-text-dim">
               Success Rate: {getSuccessRate().toFixed(1)}%
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Game Statistics */}
-            <div className="bg-gtl-surface-light rounded-lg p-6 border border-gtl-border">
-              <h3 className="text-gtl-text text-2xl font-bold mb-6 text-center">📊 Game Statistics</h3>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center bg-gtl-surface rounded p-4">
-                  <span className="text-gtl-text text-lg">⭐ Shinies Sniped:</span>
-                  <span className="text-gtl-text text-xl font-bold">
+            <div className="bg-gtl-surface-light rounded-lg p-3 border border-gtl-border">
+              <h3 className="text-gtl-text text-lg font-bold mb-3 text-center">📊 Game Statistics</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center bg-gtl-surface rounded p-2">
+                  <span className="text-gtl-text text-sm">⭐ Shinies Sniped:</span>
+                  <span className="text-gtl-text text-sm font-bold">
                     {gameStats.shinySnipesCaught}/{gameStats.totalShiniesAppeared}
                   </span>
                 </div>
                 
-                <div className="flex justify-between items-center bg-gtl-surface rounded p-4">
-                  <span className="text-gtl-text text-lg">📊 Success Rate:</span>
-                  <span className="text-gtl-text text-xl font-bold">
+                <div className="flex justify-between items-center bg-gtl-surface rounded p-2">
+                  <span className="text-gtl-text text-sm">📊 Success Rate:</span>
+                  <span className="text-gtl-text text-sm font-bold">
                     {getSuccessRate().toFixed(1)}%
                   </span>
                 </div>
                 
-                <div className="flex justify-between items-center bg-gtl-surface rounded p-4">
-                  <span className="text-gtl-text text-lg">⚡ Avg Reaction Time:</span>
-                  <span className="text-gtl-text text-xl font-bold">
+                <div className="flex justify-between items-center bg-gtl-surface rounded p-2">
+                  <span className="text-gtl-text text-sm">⚡ Avg Reaction Time:</span>
+                  <span className="text-gtl-text text-sm font-bold">
                     {getAverageReactionTime().toFixed(0)}ms
                   </span>
                 </div>
                 
-                <div className="flex justify-between items-center bg-gtl-surface rounded p-4">
-                  <span className="text-gtl-text text-lg">🎯 Total Attempts:</span>
-                  <span className="text-gtl-text text-xl font-bold">
+                <div className="flex justify-between items-center bg-gtl-surface rounded p-2">
+                  <span className="text-gtl-text text-sm">🎯 Total Attempts:</span>
+                  <span className="text-gtl-text text-sm font-bold">
                     {gameStats.reactionTimes.length}
                   </span>
                 </div>
@@ -104,42 +104,42 @@ const ResultsPage: React.FC<ResultsPageProps> = ({
             </div>
 
             {/* Game Settings Used */}
-            <div className="bg-gtl-surface-light rounded-lg p-6 border border-gtl-border">
-              <h3 className="text-gtl-text text-2xl font-bold mb-6 text-center">⚙️ Settings Used</h3>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center bg-gtl-surface rounded p-4">
-                  <span className="text-gtl-text text-lg">⭐ Shiny Frequency:</span>
-                  <span className="text-gtl-text text-xl font-bold">
+            <div className="bg-gtl-surface-light rounded-lg p-3 border border-gtl-border">
+              <h3 className="text-gtl-text text-lg font-bold mb-3 text-center">⚙️ Settings Used</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center bg-gtl-surface rounded p-2">
+                  <span className="text-gtl-text text-sm">⭐ Shiny Frequency:</span>
+                  <span className="text-gtl-text text-sm font-bold">
                     {gameSettings.shinyFrequency}%
                   </span>
                 </div>
                 
-                <div className="flex justify-between items-center bg-gtl-surface rounded p-4">
-                  <span className="text-gtl-text text-lg">📡 Ping Simulation:</span>
-                  <span className="text-gtl-text text-xl font-bold">
+                <div className="flex justify-between items-center bg-gtl-surface rounded p-2">
+                  <span className="text-gtl-text text-sm">�� Ping Simulation:</span>
+                  <span className="text-gtl-text text-sm font-bold">
                     {gameSettings.pingSimulation}ms
                   </span>
                 </div>
                 
-                                 <div className="flex justify-between items-center bg-gtl-surface rounded p-4">
-                   <span className="text-gtl-text text-lg">🎯 GTL Activity:</span>
-                   <span className="text-gtl-text text-xl font-bold">
-                     {gameSettings.gtlActivity} max
-                   </span>
-                 </div>
-                 
-                 <div className="flex justify-between items-center bg-gtl-surface rounded p-4">
-                   <span className="text-gtl-text text-lg">⏰ Snipe Window:</span>
-                   <span className="text-gtl-text text-xl font-bold">
-                     {(gameSettings.snipeWindow / 1000).toFixed(1)}s
-                   </span>
-                 </div>
+                <div className="flex justify-between items-center bg-gtl-surface rounded p-2">
+                  <span className="text-gtl-text text-sm">🎯 GTL Activity:</span>
+                  <span className="text-gtl-text text-sm font-bold">
+                    {gameSettings.gtlActivity} max
+                  </span>
+                </div>
                 
+                <div className="flex justify-between items-center bg-gtl-surface rounded p-2">
+                  <span className="text-gtl-text text-sm">⏰ Snipe Window:</span>
+                  <span className="text-gtl-text text-sm font-bold">
+                    {(gameSettings.snipeWindow / 1000).toFixed(1)}s
+                  </span>
+                </div>
+               
                 {/* Difficulty Rating */}
-                <div className="mt-6 bg-gtl-primary bg-opacity-20 rounded p-4 border border-gtl-primary">
+                <div className="mt-3 bg-gtl-primary bg-opacity-20 rounded p-2 border border-gtl-primary">
                   <div className="text-center">
-                    <div className="text-gtl-text text-lg font-medium mb-2">Difficulty Rating</div>
-                    <div className="text-gtl-text text-xl font-bold">
+                    <div className="text-gtl-text text-sm font-medium mb-1">Difficulty Rating</div>
+                    <div className="text-gtl-text text-sm font-bold">
                       {getDifficultyRating(gameSettings)}
                     </div>
                   </div>
@@ -149,36 +149,21 @@ const ResultsPage: React.FC<ResultsPageProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-center gap-6 mt-8">
+          <div className="flex justify-center gap-3 mt-4">
             <button
               onClick={onPlayAgain}
-              className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg text-xl shadow-lg transform hover:scale-105 transition-all duration-200"
+              className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm shadow-lg transform hover:scale-105 transition-all duration-200"
             >
               Play Again (Same Settings)
             </button>
             
             <button
               onClick={onBackToSettings}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-xl shadow-lg transform hover:scale-105 transition-all duration-200"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm shadow-lg transform hover:scale-105 transition-all duration-200"
             >
               Back to Main Menu
             </button>
           </div>
-
-          {/* Tips for Improvement */}
-          {getSuccessRate() < 50 && (
-            <div className="mt-8 bg-yellow-600 bg-opacity-20 rounded-lg p-6 border border-yellow-600">
-              <h4 className="text-yellow-400 text-xl font-bold mb-3">💡 Tips for Improvement</h4>
-                             <ul className="text-gtl-text space-y-2">
-                 <li>• Try lowering the shiny frequency to practice with fewer distractions</li>
-                 <li>• Increase ping simulation for more time to react</li>
-                 <li>• Reduce GTL activity to focus on individual shinies</li>
-                 <li>• Increase snipe window to have more time to purchase shinies</li>
-                 <li>• Keep your eyes focused on the refresh button area</li>
-                 <li>• Practice makes perfect - reaction time improves with repetition!</li>
-               </ul>
-            </div>
-          )}
         </div>
       </div>
     </div>
