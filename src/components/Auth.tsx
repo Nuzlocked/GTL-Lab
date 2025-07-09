@@ -21,28 +21,6 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
     return null
   }
 
-  // Check if username is unique (case-insensitive)
-  const checkUsernameUnique = async (username: string): Promise<boolean> => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('username')
-        .ilike('username', username)
-        .limit(1)
-
-      if (error) {
-        console.error('Error checking username:', error)
-        // If we can't check, allow the signup and let database constraints handle it
-        return true
-      }
-
-      return !data || data.length === 0
-    } catch (error) {
-      console.error('Error checking username:', error)
-      return true // Allow if we can't check
-    }
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -64,16 +42,6 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
           setLoading(false)
           return
         }
-
-        // Check username uniqueness
-        const isUnique = await checkUsernameUnique(username)
-        if (!isUnique) {
-          setMessage('Username is already taken')
-          setLoading(false)
-          return
-        }
-
-        console.log('Attempting to sign up user:', email, 'with username:', username.toLowerCase())
         
         const { data, error } = await supabase.auth.signUp({
           email,

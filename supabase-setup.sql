@@ -27,11 +27,11 @@ CREATE POLICY "Public profiles are viewable by everyone" ON profiles
 
 -- Users can insert their own profile
 CREATE POLICY "Users can insert their own profile" ON profiles
-  FOR INSERT WITH CHECK (auth.uid() = id);
+  FOR INSERT WITH CHECK ((select auth.uid()) = id);
 
 -- Users can update their own profile
 CREATE POLICY "Users can update their own profile" ON profiles
-  FOR UPDATE USING (auth.uid() = id);
+  FOR UPDATE USING ((select auth.uid()) = id);
 
 -- Function to handle updated_at timestamp
 CREATE OR REPLACE FUNCTION handle_updated_at()
@@ -54,33 +54,35 @@ RETURNS TRIGGER AS $$
 DECLARE
   username_value TEXT;
 BEGIN
-  -- Extract username from user metadata
-  username_value := NEW.raw_user_meta_data->>'username';
-  
+  -- Extract username from user metadata, ensuring it's not null or empty
+  username_value := COALESCE(NULLIF(TRIM(NEW.raw_user_meta_data->'user_metadata'->>'username'), ''), NULL);
+
   -- If no username provided, use email prefix but ensure uniqueness
-  IF username_value IS NULL OR username_value = '' THEN
+  IF username_value IS NULL THEN
     username_value := SPLIT_PART(NEW.email, '@', 1);
     
-    -- If this username already exists, append the user ID to make it unique
-    IF EXISTS (SELECT 1 FROM profiles WHERE username = username_value) THEN
-      username_value := username_value || '_' || SUBSTRING(NEW.id::TEXT, 1, 8);
+    -- If this username already exists, append a short hash of the user ID to make it unique
+    IF EXISTS (SELECT 1 FROM public.profiles WHERE username = username_value) THEN
+      username_value := username_value || '_' || SUBSTRING(NEW.id::TEXT, 1, 4);
     END IF;
   END IF;
   
-  INSERT INTO profiles (id, username, email)
+  -- Insert the new profile
+  INSERT INTO public.profiles (id, username, email)
   VALUES (
     NEW.id,
     username_value,
     NEW.email
   );
+  
   RETURN NEW;
 EXCEPTION
   WHEN unique_violation THEN
-    -- If we still get a unique violation, append timestamp
-    INSERT INTO profiles (id, username, email)
+    -- If we still somehow get a unique violation, append a more unique suffix
+    INSERT INTO public.profiles (id, username, email)
     VALUES (
       NEW.id,
-      username_value || '_' || EXTRACT(EPOCH FROM NOW())::BIGINT,
+      username_value || '_' || SUBSTRING(REPLACE(gen_random_uuid()::TEXT, '-', ''), 1, 6),
       NEW.email
     );
     RETURN NEW;
