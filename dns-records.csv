@@ -1,0 +1,7 @@
+Type,Name,Value
+CNAME,4nl2ndi5dun27qimwj6g2eqr6u7giyat._domainkey.gtl-lab.com,4nl2ndi5dun27qimwj6g2eqr6u7giyat.dkim.amazonses.com
+CNAME,sjxd5kchpulgxgmoj6aviy5cysuyrap6._domainkey.gtl-lab.com,sjxd5kchpulgxgmoj6aviy5cysuyrap6.dkim.amazonses.com
+CNAME,f2wkwm5x33cwsldavoozo4n7x53saxt6._domainkey.gtl-lab.com,f2wkwm5x33cwsldavoozo4n7x53saxt6.dkim.amazonses.com
+MX,noreply.gtl-lab.com,10 feedback-smtp.us-east-2.amazonses.com
+TXT,noreply.gtl-lab.com,"v=spf1 include:amazonses.com ~all"
+TXT,_dmarc.gtl-lab.com,"v=DMARC1; p=none;"

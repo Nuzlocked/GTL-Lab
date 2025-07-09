@@ -51,23 +51,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null)
       
       if (session?.user) {
-        // Try to get profile first, fallback to user metadata
-        let profileData = await fetchProfile(session.user.id)
-        
-        if (!profileData && session.user.user_metadata?.username) {
-          // Create profile from user metadata if it doesn't exist
-          const { data: insertedProfile } = await supabase
-            .from('profiles')
-            .insert({
-              id: session.user.id,
-              username: session.user.user_metadata.username,
-              email: session.user.email!
-            })
-            .select()
-            .single()
-          
-          profileData = insertedProfile
-        }
+        // Try to get profile, fallback to user metadata if profile doesn't exist yet
+        const profileData = await fetchProfile(session.user.id)
         
         setProfile(profileData || {
           id: session.user.id,
@@ -84,28 +69,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session)
+      
       setSession(session)
       setUser(session?.user ?? null)
       
       if (session?.user) {
-        // Try to get profile first, fallback to user metadata
-        let profileData = await fetchProfile(session.user.id)
-        
-        if (!profileData && session.user.user_metadata?.username) {
-          // Create profile from user metadata if it doesn't exist
-          const { data: insertedProfile } = await supabase
-            .from('profiles')
-            .insert({
-              id: session.user.id,
-              username: session.user.user_metadata.username,
-              email: session.user.email!
-            })
-            .select()
-            .single()
-          
-          profileData = insertedProfile
-        }
+        // Try to get profile, fallback to user metadata if profile doesn't exist yet
+        const profileData = await fetchProfile(session.user.id)
         
         setProfile(profileData || {
           id: session.user.id,

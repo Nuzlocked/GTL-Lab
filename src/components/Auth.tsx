@@ -30,9 +30,10 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
         .ilike('username', username)
         .limit(1)
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 is "table does not exist"
+      if (error) {
         console.error('Error checking username:', error)
-        return true // Allow if we can't check
+        // If we can't check, allow the signup and let database constraints handle it
+        return true
       }
 
       return !data || data.length === 0
@@ -72,37 +73,32 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
           return
         }
 
+        console.log('Attempting to sign up user:', email, 'with username:', username.toLowerCase())
+        
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: {
               username: username.toLowerCase() // Store as lowercase for consistency
-            }
+            },
+            emailRedirectTo: window.location.origin
           }
         })
 
-        if (error) throw error
+        console.log('Signup result:', { data, error })
 
-        // Create profile record if signup was successful
-        if (data.user) {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: data.user.id,
-              username: username.toLowerCase(),
-              email: email
-            })
-
-          if (profileError) {
-            console.error('Error creating profile:', profileError)
-            // Don't throw here as the user was created successfully
-          }
+        if (error) {
+          console.error('Auth signup error:', error)
+          throw error
         }
+
+        // Profile will be created automatically by database trigger
+        // No need to manually create it here
 
         // Check if email confirmation is required
         if (data.user && !data.user.email_confirmed_at) {
-          setMessage('Check your email for verification link! If you don\'t see it, check your spam folder.')
+          setMessage('Check your email for verification link! Click the link to verify your account and then return to sign in. If you don\'t see it, check your spam folder.')
         } else {
           setMessage('Account created successfully! You can now sign in.')
         }
@@ -112,7 +108,25 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
         onAuthSuccess()
       }
     } catch (error: any) {
-      setMessage(error.message)
+      console.error('Auth error:', error)
+      console.error('Error details:', error.message, error.status, error.statusText)
+      
+      // Provide more specific error messages
+      if (error.message?.includes('duplicate key') || error.message?.includes('already exists')) {
+        setMessage('Username is already taken. Please choose a different one.')
+      } else if (error.message?.includes('Invalid email')) {
+        setMessage('Please enter a valid email address.')
+      } else if (error.message?.includes('Password')) {
+        setMessage('Password must be at least 6 characters long.')
+      } else if (error.message?.includes('profiles')) {
+        setMessage('Error creating user profile. Please try again.')
+      } else if (error.message?.includes('function handle_new_user')) {
+        setMessage('Database error saving new user. Please try again.')
+      } else if (error.message?.includes('Database error saving new user')) {
+        setMessage('Database trigger error. Please check your Supabase database setup.')
+      } else {
+        setMessage(error.message || 'An unexpected error occurred. Please try again.')
+      }
     } finally {
       setLoading(false)
     }

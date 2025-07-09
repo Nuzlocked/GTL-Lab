@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SettingsPage from './components/SettingsPage';
 import GlobalTradeLink from './components/GlobalTradeLink';
 import ResultsPage from './components/ResultsPage';
@@ -26,6 +26,17 @@ function AppContent() {
     totalReactionTime: 0,
     reactionTimes: []
   });
+  const [verificationMessage, setVerificationMessage] = useState<string>('');
+
+  // Check for email verification on component mount
+  useEffect(() => {
+    const urlHash = window.location.hash;
+    if (urlHash.includes('access_token') && urlHash.includes('type=signup')) {
+      setVerificationMessage('Email verified successfully! You can now use the app.');
+      // Clear the hash from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   const handleStartGame = (settings: GameSettings) => {
     setGameSettings(settings);
@@ -57,7 +68,7 @@ function AppContent() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Loading...</div>
+        <div className="text-xl text-white">Loading...</div>
       </div>
     );
   }
@@ -87,6 +98,11 @@ function AppContent() {
               </button>
             </div>
           </div>
+          {verificationMessage && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+              {verificationMessage}
+            </div>
+          )}
         </div>
       </header>
 
