@@ -120,9 +120,9 @@ const PokemonListings: React.FC<PokemonListingsProps> = ({
         <table className="w-full">
           <thead>
             <tr className="bg-gtl-header text-gtl-text">
-              <th className="px-2 py-1 text-left border border-gtl-cell-border text-sm font-medium w-36">Pokémon</th>
+              <th className="px-2 py-1 text-left border border-gtl-cell-border text-sm font-medium w-40">Pokémon</th>
               <th className="px-2 py-1 text-left border border-gtl-cell-border text-sm font-medium w-16">Nature</th>
-              <th className="px-1 py-1 text-center border border-gtl-cell-border text-sm font-medium w-28">IVs</th>
+              <th className="px-1 py-1 text-center border border-gtl-cell-border text-sm font-medium w-24">IVs</th>
               <th className="px-2 py-1 text-center border border-gtl-cell-border text-sm font-medium w-24">Price</th>
               <th className="px-2 py-1 text-center border border-gtl-cell-border text-sm font-medium w-24">Start Date</th>
               <th className="px-2 py-1 text-center border border-gtl-cell-border text-sm font-medium w-24">End Date</th>
@@ -136,8 +136,7 @@ const PokemonListings: React.FC<PokemonListingsProps> = ({
                 <tr key={`empty-${index}`} className="bg-gtl-uniform-bg">
                   <td className="px-2 py-1 border border-gtl-cell-border">
                     <div className="flex items-center gap-1">
-                      <div className="relative border border-gtl-cell-border px-3 py-0.5">
-                        <div className="w-8 h-8 bg-transparent"></div>
+                      <div className="relative border border-gtl-cell-border w-20 h-12 flex items-center justify-center">
                         <div className="absolute top-0 left-0 w-3 h-3 bg-transparent"></div>
                       </div>
                       <div>
@@ -182,13 +181,14 @@ const PokemonListings: React.FC<PokemonListingsProps> = ({
                   >
                   <td className="px-2 py-1 border border-gtl-cell-border">
                     <div className="flex items-center gap-1">
-                      <div className="relative border border-gtl-cell-border px-3 py-0.5">
+                      <div className="relative border border-gtl-cell-border w-20 h-12 flex items-center justify-center">
                         <img 
                           src={listing.pokemon.sprite} 
                           alt={listing.pokemon.name}
-                          className="w-8 h-8 pixelated"
+                          className="pixelated max-w-full max-h-full"
+                          style={{ imageRendering: 'pixelated' }}
                           onError={(e) => {
-                            e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjNDQ0IiByeD0iNCIvPgo8dGV4dCB4PSIyMCIgeT0iMjQiIGZpbGw9IiM5OTkiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Pz88L3RleHQ+Cjwvc3ZnPgo=';
+                            e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjNDQ0IiByeD0iNCIvPgo8dGV4dCB4PSIyMCIgeT0iMjQiIGZpbGw9IiM5OTkiIGZvbnQtZmtaW1pWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Pz88L3RleHQ+Cjwvc3ZnPgo=';
                           }}
                         />
                         <div className={`absolute top-0 left-0 w-3 h-3 ${listing.pokemon.gender === 'male' ? 'bg-blue-400' : 'bg-pink-400'}`}>

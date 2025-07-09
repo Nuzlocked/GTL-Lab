@@ -3,6 +3,15 @@ import PokemonListings from './PokemonListings';
 import { generateInitialListings, generateRandomListing } from '../data/mockData';
 import { PokemonListing } from '../types/Pokemon';
 import { GameSettings } from '../types/GameSettings';
+import { useSpriteLoading } from '../contexts/SpriteLoadingContext';
+
+const TABS = [
+  { id: 'pokemon', label: 'Pokémon Listings' },
+  { id: 'items', label: 'Item Listings' },
+  { id: 'your', label: 'Your Listings' },
+  { id: 'create', label: 'Create Listing' },
+  { id: 'log', label: 'Trade Log' },
+];
 
 // Game state interface
 interface GameStats {
@@ -33,6 +42,7 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
   const [listings, setListings] = useState<PokemonListing[]>([]);
   const [activeTab, setActiveTab] = useState('pokemon');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { areSpritesLoaded } = useSpriteLoading();
   
   // Game state
   const [gameActive, setGameActive] = useState(false);
@@ -59,6 +69,9 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
 
   // Countdown timer effect
   useEffect(() => {
+    // Wait for sprites to be loaded before starting the countdown
+    if (!areSpritesLoaded) return;
+
     if (showCountdown && countdown > 0) {
       const timer = setTimeout(() => {
         setCountdown(prev => prev - 1);
@@ -69,7 +82,7 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
       setShowCountdown(false);
       setGameActive(true);
     }
-  }, [countdown, showCountdown]);
+  }, [countdown, showCountdown, areSpritesLoaded]);
 
   // Game timer effect
   useEffect(() => {
@@ -96,9 +109,6 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
     return () => clearInterval(interval);
   }, [gameActive, gameTimeLeft, onGameComplete, onCancel]);
 
-
-
-  // Add notification function
   const addNotification = (message: string, type: 'success' | 'error') => {
     const id = Date.now().toString();
     const notification = { id, message, type };
@@ -248,10 +258,10 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
                 return newMap;
               });
               
-              // Increment total shinies appeared counter
+              // Update stats for total shinies appeared
               setGameStats(prev => ({
                 ...prev,
-                totalShiniesAppeared: prev.totalShiniesAppeared + 1
+                totalShiniesAppeared: prev.totalShiniesAppeared + 1,
               }));
             }
           });
@@ -267,24 +277,120 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
       
       // End flicker effect
       setIsRefreshing(false);
-    }, gameSettings.pingSimulation); // Use ping simulation setting for flicker duration
+    }, gameSettings.pingSimulation);
   };
-
-  const tabs = [
-    { id: 'pokemon', label: 'Pokémon Listings', active: true },
-    { id: 'items', label: 'Item Listings', active: false },
-    { id: 'your', label: 'Your Listings', active: false },
-    { id: 'create', label: 'Create Listing', active: false },
-    { id: 'trade', label: 'Trade Log', active: false },
-  ];
 
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
+  
+  // Display a waiting message if sprites aren't loaded yet
+  if (!areSpritesLoaded) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-gtl-deep">
+        <div className="text-white text-3xl font-bold">
+          Waiting until all sprites are loaded...
+        </div>
+      </div>
+    );
+  }
 
+  // Display a countdown timer before the game starts
+  if (showCountdown) {
+    return (
+      <div className="h-screen pt-20 flex items-center justify-center px-3">
+        <div className="max-w-6xl w-full relative">
+          {/* Countdown Overlay */}
+          <div className="absolute inset-0 bg-black bg-opacity-25 backdrop-blur-sm flex items-center justify-center z-50 rounded-lg">
+            <div className="text-center text-white">
+              <div className="text-8xl font-bold animate-pulse">
+                {countdown > 0 ? countdown : 'GO!'}
+              </div>
+              {countdown > 0 && (
+                <p className="text-2xl mt-4">
+                  Get ready to snipe shinies!
+                </p>
+              )}
+              <button
+                onClick={onCancel}
+                className="mt-8 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+              >
+                ❌ Cancel
+              </button>
+            </div>
+          </div>
 
+          {/* Header */}
+          <div className="bg-gtl-header rounded-t-lg p-2 border-b border-gtl-border">
+            <div className="flex items-center justify-between">
+              <h1 className="text-sm font-bold text-gtl-text">Global Trade Link</h1>
+              <button className="text-gtl-text hover:text-white text-sm">×</button>
+            </div>
+          </div>
+
+          {/* Game Control Panel (Placeholder) */}
+          <div className="bg-gtl-surface border-b border-gtl-border p-2 h-[76px]">
+            {/* This space is intentionally kept to maintain layout, countdown is in the overlay */}
+          </div>
+
+          {/* Navigation Tabs */}
+          <div className="bg-gtl-surface border-b border-gtl-border">
+            <div className="flex">
+              {TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-2 py-1 text-sm font-medium border-r border-gtl-border ${
+                    activeTab === tab.id
+                      ? 'bg-gtl-primary text-white'
+                      : 'bg-gtl-surface-light text-gtl-text hover:bg-gtl-primary hover:text-white'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Content Area */}
+          <div className="bg-gtl-surface rounded-b-lg">
+            {activeTab === 'pokemon' && (
+              <PokemonListings 
+                listings={listings} 
+                onPurchase={handlePurchase} 
+                onRefresh={handleRefresh} 
+                isRefreshing={isRefreshing}
+                gameActive={gameActive}
+                activeShinySnipes={activeShinySnipes}
+              />
+            )}
+            {activeTab !== 'pokemon' && (
+              <div className="p-4 text-center text-gtl-text-dim">
+                <p className="text-sm">This section is not yet implemented.</p>
+                <p className="text-sm">Currently showing: {activeTab === 'items' ? 'Item Listings' : 
+                  activeTab === 'your' ? 'Your Listings' : 
+                  activeTab === 'create' ? 'Create Listing' : 'Trade Log'}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Notification System */}
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
+          {notifications.map((notification) => (
+            <div
+              key={notification.id}
+              className={`mb-2 px-3 py-2 rounded-lg text-white font-medium text-sm shadow-lg animate-fade-in bg-gtl-uniform-bg`}
+            >
+              {notification.message}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen pt-20 flex items-center justify-center px-3">
@@ -300,108 +406,76 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
         {/* Game Control Panel */}
         <div className="bg-gtl-surface border-b border-gtl-border p-2">
           <div className="flex items-center justify-between">
-            {showCountdown ? (
-              // Countdown Display
-              <div className="flex items-center justify-center w-full">
-                <div className="text-center">
-                  <div className={`text-3xl font-bold mb-2 animate-countdown ${countdown > 0 ? 'text-red-400' : 'text-green-400'}`}>
-                    {countdown > 0 ? countdown : 'GO!'}
+                <>
+                  <div className="flex items-center gap-2">
+                    <div className="bg-red-600 text-white font-bold py-1 px-2 rounded text-sm">
+                      ⏱️ Time: {formatTime(gameTimeLeft)}
+                    </div>
+                    <div className="bg-blue-600 text-white font-bold py-1 px-2 rounded text-sm">
+                      ⭐ Snipes: {gameStats.shinySnipesCaught}
+                    </div>
+                    <div className="bg-purple-600 text-white font-bold py-1 px-2 rounded text-sm">
+                      🎯 Attempts: {gameStats.reactionTimes.length}
+                    </div>
+                    <button 
+                      onClick={onCancel}
+                      className="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-sm"
+                    >
+                      ❌ Cancel
+                    </button>
                   </div>
-                  <p className="text-gtl-text text-sm">
-                    {countdown > 0 ? 'Get ready to snipe shinies!' : 'Game starting...'}
-                  </p>
-                  <button 
-                    onClick={onCancel}
-                    className="mt-2 bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-sm"
-                  >
-                    ❌ Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              // Game Controls
-              <>
-                <div className="flex items-center gap-2">
-                  <div className="bg-red-600 text-white font-bold py-1 px-2 rounded text-sm">
-                    ⏱️ Time: {formatTime(gameTimeLeft)}
+                  
+                  <div className="text-gtl-text text-sm">
+                    <p className="font-semibold">🎯 Snipe Pokémon within {(gameSettings.snipeWindow / 1000).toFixed(1)}s!</p>
+                    <p className="text-xs text-gtl-text-dim">Settings: {gameSettings.shinyFrequency}% shiny rate • {gameSettings.pingSimulation}ms ping • {gameSettings.gtlActivity} max/refresh • {(gameSettings.snipeWindow / 1000).toFixed(1)}s window</p>
                   </div>
-                  <div className="bg-blue-600 text-white font-bold py-1 px-2 rounded text-sm">
-                    ⭐ Snipes: {gameStats.shinySnipesCaught}
-                  </div>
-                  <div className="bg-purple-600 text-white font-bold py-1 px-2 rounded text-sm">
-                    🎯 Attempts: {gameStats.reactionTimes.length}
-                  </div>
-                  <button 
-                    onClick={onCancel}
-                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-sm"
-                  >
-                    ❌ Cancel
-                  </button>
-                </div>
-                
-                <div className="text-gtl-text text-sm">
-                  <p className="font-semibold">🎯 Catch shiny Pokémon within {(gameSettings.snipeWindow / 1000).toFixed(1)}s!</p>
-                  <p className="text-xs text-gtl-text-dim">Settings: {gameSettings.shinyFrequency}% shiny rate • {gameSettings.pingSimulation}ms ping • {gameSettings.gtlActivity} max/refresh • {(gameSettings.snipeWindow / 1000).toFixed(1)}s window</p>
-                </div>
-              </>
-            )}
+                </>
           </div>
         </div>
 
-        {!showCountdown && (
           <>
-            {/* Navigation Tabs */}
-            <div className="bg-gtl-surface border-b border-gtl-border">
-              <div className="flex">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`px-2 py-1 text-sm font-medium border-r border-gtl-border ${
-                      activeTab === tab.id
-                        ? 'bg-gtl-primary text-white'
-                        : 'bg-gtl-surface-light text-gtl-text hover:bg-gtl-primary hover:text-white'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Content Area */}
-            <div className="bg-gtl-surface rounded-b-lg">
-              {activeTab === 'pokemon' && (
-                <PokemonListings 
-                  listings={listings} 
-                  onPurchase={handlePurchase} 
-                  onRefresh={handleRefresh} 
-                  isRefreshing={isRefreshing}
-                  gameActive={gameActive}
-                  activeShinySnipes={activeShinySnipes}
-                />
-              )}
-              {activeTab !== 'pokemon' && (
-                <div className="p-4 text-center text-gtl-text-dim">
-                  <p className="text-sm">This section is not yet implemented.</p>
-                  <p className="text-sm">Currently showing: {activeTab === 'items' ? 'Item Listings' : 
-                    activeTab === 'your' ? 'Your Listings' : 
-                    activeTab === 'create' ? 'Create Listing' : 'Trade Log'}</p>
-                </div>
-              )}
-            </div>
-          </>
-        )}
-
-        {showCountdown && (
-          <div className="bg-gtl-surface rounded-b-lg h-48 flex items-center justify-center">
-            <div className="text-center text-gtl-text-dim">
-              <div className="text-2xl mb-2">🎮</div>
-              <p className="text-sm">Preparing your GTL experience...</p>
-              <p className="text-xs mt-1">Settings: {gameSettings.shinyFrequency}% shiny • {(gameSettings.snipeWindow / 1000).toFixed(1)}s window • {gameSettings.gtlActivity} max/refresh</p>
-            </div>
+        {/* Navigation Tabs */}
+        <div className="bg-gtl-surface border-b border-gtl-border">
+          <div className="flex">
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-2 py-1 text-sm font-medium border-r border-gtl-border ${
+                  activeTab === tab.id
+                    ? 'bg-gtl-primary text-white'
+                    : 'bg-gtl-surface-light text-gtl-text hover:bg-gtl-primary hover:text-white'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
-        )}
+        </div>
+
+        {/* Content Area */}
+        <div className="bg-gtl-surface rounded-b-lg">
+          {activeTab === 'pokemon' && (
+            <PokemonListings 
+              listings={listings} 
+              onPurchase={handlePurchase} 
+              onRefresh={handleRefresh} 
+              isRefreshing={isRefreshing}
+              gameActive={gameActive}
+              activeShinySnipes={activeShinySnipes}
+            />
+          )}
+          {activeTab !== 'pokemon' && (
+            <div className="p-4 text-center text-gtl-text-dim">
+              <p className="text-sm">This section is not yet implemented.</p>
+              <p className="text-sm">Currently showing: {activeTab === 'items' ? 'Item Listings' : 
+                activeTab === 'your' ? 'Your Listings' : 
+                activeTab === 'create' ? 'Create Listing' : 'Trade Log'}</p>
+            </div>
+          )}
+        </div>
+          </>
+
       </div>
 
       {/* Notification System */}

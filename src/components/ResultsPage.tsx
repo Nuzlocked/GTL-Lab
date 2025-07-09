@@ -48,7 +48,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({
         {/* Header */}
         <div className="bg-gtl-header rounded-t-lg p-3 border-b border-gtl-border">
           <div className="text-center">
-            <h1 className="text-lg font-bold text-gtl-text mb-1">🎉 Game Complete!</h1>
+            <h1 className="text-lg font-bold text-gtl-text mb-1">Time's up!</h1>
             <p className="text-gtl-text-dim text-sm">Here's how you performed</p>
           </div>
         </div>

@@ -1,4 +1,5 @@
-import { PokemonListing, POKEMON_SPRITES, POKEMON_SHINY_SPRITES } from '../types/Pokemon';
+import { PokemonListing } from '../types/Pokemon';
+import { POKEMON_NAMES, POKEMON_SPRITES } from './pokemon-data';
 
 const NATURES = [
   'Modest', 'Gentle', 'Brave', 'Impish', 'Naughty', 'Relaxed', 'Timid', 
@@ -6,7 +7,7 @@ const NATURES = [
   'Rash', 'Lonely', 'Quiet', 'Mild', 'Calm'
 ];
 
-const POKEMON_NAMES = Object.keys(POKEMON_SPRITES);
+// const POKEMON_NAMES = Object.keys(POKEMON_SPRITES); // No longer needed
 
 const generateRandomIVs = () => ({
   hp: Math.floor(Math.random() * 32),
@@ -42,7 +43,7 @@ export const generateRandomListing = (gameActive: boolean = false, allowShiny: b
   const shinyRate = gameActive && allowShiny ? (shinyFrequency / 100) : 0.05; // Convert percentage to decimal
   const isShiny = allowShiny && Math.random() < shinyRate;
   
-  const sprite = isShiny ? POKEMON_SHINY_SPRITES[pokemonName] : POKEMON_SPRITES[pokemonName];
+  const sprite = POKEMON_SPRITES[pokemonName];
   const price = isShiny ? 250000 : generateRandomPrice();
   
   return {

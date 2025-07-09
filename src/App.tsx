@@ -4,6 +4,7 @@ import GlobalTradeLink from './components/GlobalTradeLink';
 import ResultsPage from './components/ResultsPage';
 import Auth from './components/Auth';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { SpriteLoadingProvider, useSpriteLoading } from './contexts/SpriteLoadingContext';
 import { GameSettings, DEFAULT_SETTINGS } from './types/GameSettings';
 import { supabase } from './lib/supabase';
 import './index.css';
@@ -25,6 +26,7 @@ interface UserProfile {
 
 function AppContent() {
   const { user, loading: authLoading, signOut } = useAuth();
+  const { startPreloading } = useSpriteLoading();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [currentPage, setCurrentPage] = useState<AppState>('settings');
   const [gameSettings, setGameSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
@@ -39,6 +41,9 @@ function AppContent() {
   // Fetch profile when user object is available or changes
   useEffect(() => {
     if (user) {
+      // Start preloading sprites as soon as the user is logged in
+      startPreloading();
+
       const fetchAndOrCreateProfile = async () => {
         let { data, error } = await supabase
           .from('profiles')
@@ -192,7 +197,9 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <SpriteLoadingProvider>
+        <AppContent />
+      </SpriteLoadingProvider>
     </AuthProvider>
   );
 }
