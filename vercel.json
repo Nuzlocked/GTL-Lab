@@ -4,6 +4,13 @@
   "devCommand": "npm start",
   "installCommand": "npm install",
   "framework": "create-react-app",
+  "redirects": [
+    {
+      "source": "https://gtl-lab.com/:path*",
+      "destination": "https://www.gtl-lab.com/:path*",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",
