@@ -6,9 +6,15 @@
   "framework": "create-react-app",
   "redirects": [
     {
-      "source": "https://gtl-lab.com/:path*",
-      "destination": "https://www.gtl-lab.com/:path*",
-      "permanent": true
+      "source": "/(.*)",
+      "destination": "https://www.gtl-lab.com/$1",
+      "permanent": true,
+      "has": [
+        {
+          "type": "host",
+          "value": "gtl-lab.com"
+        }
+      ]
     }
   ],
   "rewrites": [
