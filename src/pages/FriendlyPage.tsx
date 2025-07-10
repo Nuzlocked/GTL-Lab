@@ -100,99 +100,23 @@ const FriendlyPage: React.FC = () => {
     // Subscribe to challenges (both incoming and outgoing)
     friendlyService.subscribeToChallenges(user.id, (payload) => {
       console.log('Challenge subscription event:', payload);
+      // On any change, reload our list of pending challenges
+      loadPendingChallenges();
       
-      if (payload.eventType === 'INSERT') {
-        const newChallenge = payload.new as FriendlyChallenge;
-        if (newChallenge.status !== 'pending') return;
-
-        // Add for either direction
-        setPendingChallenges(prev => {
-          const exists = prev.some(c => c.id === newChallenge.id);
-          if (!exists) {
-            return [newChallenge, ...prev];
-          }
-          return prev;
-        });
-
-        if (newChallenge.challenged_id === user.id) {
-          showMessage('New challenge request received!', 'info');
-        }
-      } else if (payload.eventType === 'UPDATE') {
+      // If our own challenge was accepted, check for an active match immediately
+      if (payload.eventType === 'UPDATE') {
         const updatedChallenge = payload.new as FriendlyChallenge;
-        
-        // Handle challenge status updates
-        if (updatedChallenge.challenger_id === user.id) {
-          // This is a challenge you sent that got updated
-          if (updatedChallenge.status === 'accepted') {
-            showMessage(`${updatedChallenge.challenged_username} accepted your challenge!`, 'success');
-
-            // The match INSERT event should handle navigation, but as a fallback,
-            // we'll poll for the active match to ensure navigation happens.
-            let attempts = 0;
-            const pollForMatch = setInterval(async () => {
-              attempts++;
-              if (attempts > 15) { // Poll for 3 seconds
-                clearInterval(pollForMatch);
-                return;
-              }
-
-              const match = await friendlyService.getActiveMatch(user.id);
-              if (match) {
-                clearInterval(pollForMatch);
-                // Check if we are still on the friendly page before navigating
-                if (window.location.pathname.includes('/friendly')) {
-                   navigate('/friendly/match', { state: { match } });
-                }
-              }
-            }, 200);
-          } else if (updatedChallenge.status === 'rejected') {
-            showMessage(`${updatedChallenge.challenged_username} rejected your challenge.`, 'info');
-          }
-        } else if (updatedChallenge.challenged_id === user.id) {
-          // This is a challenge to you that got updated
-          // We will handle state update below in a consolidated setState
+        if (updatedChallenge.challenger_id === user.id && updatedChallenge.status === 'accepted') {
+          checkActiveMatch();
         }
-        
-        // Consolidated state update: if status is not pending remove; otherwise add/update
-        setPendingChallenges(prev => {
-          if (updatedChallenge.status !== 'pending') {
-            return prev.filter(c => c.id !== updatedChallenge.id);
-          }
-          const exists = prev.some(c => c.id === updatedChallenge.id);
-          if (exists) {
-            return prev.map(c => (c.id === updatedChallenge.id ? updatedChallenge : c));
-          }
-          return [updatedChallenge, ...prev];
-        });
       }
     });
 
     // Subscribe to matches
     friendlyService.subscribeToMatches(user.id, (payload) => {
       console.log('Match subscription event:', payload);
-      
-      if (payload.eventType === 'INSERT') {
-        const newMatch = payload.new as FriendlyMatch;
-        setActiveMatch(newMatch);
-        showMessage('Match is starting!', 'success');
-        
-        // Automatically navigate to match
-        setTimeout(() => {
-          navigate('/friendly/match', { state: { match: newMatch } });
-        }, 1000); // Small delay to show the message
-        
-      } else if (payload.eventType === 'UPDATE') {
-        const updatedMatch = payload.new as FriendlyMatch;
-        setActiveMatch(updatedMatch);
-        
-        // Handle match status changes
-        if (updatedMatch.match_status === 'starting' || updatedMatch.match_status === 'in_progress') {
-          navigate('/friendly/match', { state: { match: updatedMatch } });
-        } else if (updatedMatch.match_status === 'completed') {
-          setActiveMatch(null);
-          showMessage('Match completed!', 'info');
-        }
-      }
+      // On any change, check for an active match
+      checkActiveMatch();
     });
   };
 
@@ -258,17 +182,14 @@ const FriendlyPage: React.FC = () => {
       
       if (result.success) {
         showMessage(result.message, 'success');
-        // Optimistically remove from list
-        setPendingChallenges(prev => prev.filter(c => c.id !== challengeId));
-        // Reload challenge count/badge
-        await loadPendingChallenges();
-        
+        // The subscription will handle state updates, but we navigate the acceptor immediately.
         if (result.match) {
-          setActiveMatch(result.match);
           navigate('/friendly/match', { state: { match: result.match } });
         }
       } else {
         showMessage(result.message, 'error');
+        // If it fails, refresh the list to get the latest state
+        loadPendingChallenges();
       }
     } catch (error) {
       showMessage('Failed to accept challenge. Please try again.', 'error');
@@ -284,11 +205,10 @@ const FriendlyPage: React.FC = () => {
       
       if (result.success) {
         showMessage(result.message, 'success');
-        // Optimistically remove from list
-        setPendingChallenges(prev => prev.filter(c => c.id !== challengeId));
-        await loadPendingChallenges();
+        // The subscription will handle state updates.
       } else {
         showMessage(result.message, 'error');
+        loadPendingChallenges();
       }
     } catch (error) {
       showMessage('Failed to reject challenge. Please try again.', 'error');
@@ -517,7 +437,9 @@ const FriendlyPage: React.FC = () => {
                             </>
                           ) : (
                             <>
-                              <h3 className="text-gtl-text font-bold text-lg">{challenge.challenger_username}</h3>
+                              <h3 className="text-gtl-text font-bold text-lg">
+                                Challenge from {challenge.challenger_username}
+                              </h3>
                               <p className="text-gtl-text-dim text-sm">
                                 Expires in: <span className="font-mono">{formatTimeRemaining(challenge.expires_at)}</span>
                               </p>
