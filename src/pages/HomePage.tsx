@@ -2,7 +2,7 @@ import React from 'react';
 
 const HomePage: React.FC = () => {
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center p-4">
+    <div className="min-h-[calc(100vh-5rem)] flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-4xl space-y-8">
         {/* Welcome Section */}
         <div className="rounded-2xl bg-gtl-surface-glass backdrop-blur-xl border border-white/20 shadow-2xl p-6 text-center text-white">
@@ -21,7 +21,7 @@ const HomePage: React.FC = () => {
             <div className="bg-gtl-secondary p-4 rounded-lg shadow-lg">
               <h3 className="text-xl font-bold mb-2 text-gtl-text">Practice Mode</h3>
               <p className="text-gtl-text-dim">
-                Hone your skills in a stress-free environment. No timers, no pressure.
+                Hone your skills in a stress-free environment. Customize your settings to your liking.
               </p>
             </div>
 

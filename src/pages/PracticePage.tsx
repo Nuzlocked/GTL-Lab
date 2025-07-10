@@ -46,27 +46,35 @@ const PracticePage: React.FC = () => {
   };
 
   if (pageState === 'settings') {
-    return <SettingsPage onStartGame={handleStartGame} />;
+    return (
+      <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center">
+        <SettingsPage onStartGame={handleStartGame} />
+      </div>
+    );
   }
 
   if (pageState === 'game') {
     return (
-      <GlobalTradeLink
-        gameSettings={gameSettings}
-        onGameComplete={handleGameComplete}
-        onCancel={handleCancel}
-      />
+      <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center">
+        <GlobalTradeLink
+          gameSettings={gameSettings}
+          onGameComplete={handleGameComplete}
+          onCancel={handleCancel}
+        />
+      </div>
     );
   }
   
   if (pageState === 'results') {
     return (
+      <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center">
         <ResultsPage
             gameStats={gameStats}
             gameSettings={gameSettings}
             onPlayAgain={handlePlayAgain}
             onBackToSettings={handleBackToSettings}
         />
+      </div>
     )
   }
 
