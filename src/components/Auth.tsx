@@ -59,7 +59,7 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
           password,
           options: {
             data: {
-              username: username.toLowerCase() // Store as lowercase for consistency
+              username: username // Preserve original casing
             },
             // emailRedirectTo: window.location.origin
           }

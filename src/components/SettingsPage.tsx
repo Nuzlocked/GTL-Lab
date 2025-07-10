@@ -37,7 +37,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onStartGame }) => {
         {/* Header */}
         <div className="bg-transparent p-4">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gtl-text mb-1">Welcome to GTL Lab!</h1>
+            <h1 className="text-2xl font-bold text-gtl-text mb-1">GTL Config</h1>
             <p className="text-gtl-text-dim text-base">Configure your game settings and test your reaction time!</p>
           </div>
         </div>

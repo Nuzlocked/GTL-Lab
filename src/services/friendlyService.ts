@@ -174,7 +174,7 @@ class FriendlyService {
       const { data, error } = await supabase
         .from('profiles')
         .select('id, username')
-        .eq('username', username)
+        .ilike('username', username)
         .single();
 
       if (error) return null;
@@ -246,7 +246,7 @@ class FriendlyService {
           challenger_id: challengerId,
           challenged_id: challengedUser.id,
           challenger_username: challengerUsername,
-          challenged_username: challengedUsername,
+          challenged_username: challengedUser.username,
           game_settings: gameSettings,
           status: 'pending',
           expires_at: new Date(Date.now() + 30000).toISOString() // 30 seconds from now
