@@ -14,7 +14,7 @@ interface NavigationBarProps {
 }
 
 const NavigationBar: React.FC<NavigationBarProps> = ({ profile }) => {
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-gtl-header shadow-lg border-b border-gtl-border">
@@ -50,7 +50,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ profile }) => {
               </NavLink>
               <div className="w-px h-8 bg-gtl-border"></div>
               <button
-                onClick={signOut}
+                onClick={logout}
                 className="bg-gtl-surface-light hover:bg-red-600 text-gtl-text hover:text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center space-x-2"
               >
                 <span>Sign Out</span>

@@ -11,7 +11,9 @@ CREATE TABLE profiles (
   username TEXT UNIQUE NOT NULL,
   email TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  buy_key TEXT DEFAULT 'Space' NOT NULL,
+  cancel_key TEXT DEFAULT 'Shift' NOT NULL
 );
 
 -- Create an index on username for faster lookups (case-insensitive)

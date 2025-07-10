@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 interface AuthProps {
@@ -6,6 +7,7 @@ interface AuthProps {
 }
 
 export default function Auth({ onAuthSuccess }: AuthProps) {
+  const navigate = useNavigate()
   const [isLogin, setIsLogin] = useState(true)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -35,6 +37,7 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
         })
         if (error) throw error
         setMessage('Successfully signed in!')
+        navigate('/')
       } else {
         // Validate username for signup
         const usernameError = validateUsername(username)

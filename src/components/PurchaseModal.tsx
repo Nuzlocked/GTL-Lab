@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { PokemonListing } from '../types/Pokemon';
+import { useAuth } from '../contexts/AuthContext';
 
 interface PurchaseModalProps {
   listing: PokemonListing;
@@ -8,6 +9,8 @@ interface PurchaseModalProps {
 }
 
 const PurchaseModal: React.FC<PurchaseModalProps> = ({ listing, onConfirm, onCancel }) => {
+  const { buyKey, cancelKey } = useAuth();
+
   const formatPrice = (price: number) => {
     return `$${price.toLocaleString()}`;
   };
@@ -15,12 +18,20 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({ listing, onConfirm, onCan
   // Add keyboard event listener for spacebar
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.code === 'Space' || event.key === ' ') {
+      let eventKey = event.key;
+      if (eventKey === ' ') {
+        eventKey = 'Space';
+      } else if (eventKey.length === 1) {
+        eventKey = eventKey.toUpperCase();
+      }
+
+      if (eventKey === buyKey) {
         event.preventDefault(); // Prevent scrolling
         onConfirm();
       }
-      // ESC key to cancel
-      if (event.code === 'Escape' || event.key === 'Escape') {
+      
+      // ESC key or custom cancel key to cancel
+      if (event.key === 'Escape' || eventKey === cancelKey) {
         event.preventDefault();
         onCancel();
       }
@@ -33,7 +44,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({ listing, onConfirm, onCan
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onConfirm, onCancel]);
+  }, [onConfirm, onCancel, buyKey, cancelKey]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -66,7 +77,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({ listing, onConfirm, onCan
             Are you sure you wish to purchase that listing?
           </p>
           <p className="text-gtl-text-dim text-sm">
-            Press <kbd className="bg-gtl-surface-light px-2 py-1 rounded text-xs">Space</kbd> to confirm or <kbd className="bg-gtl-surface-light px-2 py-1 rounded text-xs">Esc</kbd> to cancel
+            Press <kbd className="bg-gtl-surface-light px-2 py-1 rounded text-xs">{buyKey}</kbd> to confirm or <kbd className="bg-gtl-surface-light px-2 py-1 rounded text-xs">{cancelKey}</kbd> to cancel
           </p>
         </div>
 
