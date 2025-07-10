@@ -194,7 +194,7 @@ const PokemonListings: React.FC<PokemonListingsProps> = ({
                         <div className={`absolute top-0 left-0 w-3 h-3 ${listing.pokemon.gender === 'male' ? 'bg-blue-400' : 'bg-pink-400'}`}>
                         </div>
                         {listing.pokemon.isShiny && (
-                          <div className="absolute -top-0.5 -right-0.5 text-yellow-400 text-sm">
+                          <div className="absolute -top-0.5 -right-0.5 text-yellow-400 text-lg">
                             ⭐
                           </div>
                         )}
