@@ -268,18 +268,41 @@ class FriendlyService {
    */
   async acceptChallenge(challengeId: string): Promise<{ success: boolean; message: string; match?: FriendlyMatch }> {
     try {
-      // Update challenge status
-      const { data: challenge, error: updateError } = await supabase
+      // Attempt to mark the challenge as accepted (ignore if it was already accepted)
+      let { data: challenge, error: updateError } = await supabase
         .from('friendly_challenges')
         .update({ status: 'accepted' })
         .eq('id', challengeId)
-        .eq('status', 'pending')
+        .in('status', ['pending', 'accepted'])
         .select()
         .single();
 
       if (updateError) throw updateError;
+
+      // If no rows were updated, fetch the challenge to see its current status
       if (!challenge) {
-        return { success: false, message: 'Challenge not found or already processed.' };
+        const { data: existingChallenge } = await supabase
+          .from('friendly_challenges')
+          .select('*')
+          .eq('id', challengeId)
+          .single();
+
+        if (!existingChallenge || existingChallenge.status !== 'accepted') {
+          return { success: false, message: 'Challenge not found or already processed.' };
+        }
+
+        challenge = existingChallenge as any;
+      }
+
+      // Check if a match already exists for this challenge
+      const { data: existingMatch } = await supabase
+        .from('friendly_matches')
+        .select('*')
+        .eq('challenge_id', challengeId)
+        .single();
+
+      if (existingMatch) {
+        return { success: true, message: 'Challenge accepted! Joining match...', match: existingMatch };
       }
 
       // Create match
@@ -302,9 +325,9 @@ class FriendlyService {
       if (matchError) throw matchError;
 
       return { success: true, message: 'Challenge accepted! Starting match...', match };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error accepting challenge:', error);
-      return { success: false, message: 'Failed to accept challenge. Please try again.' };
+      return { success: false, message: error?.message || 'Failed to accept challenge. Please try again.' };
     }
   }
 
@@ -316,15 +339,14 @@ class FriendlyService {
       const { error } = await supabase
         .from('friendly_challenges')
         .update({ status: 'rejected' })
-        .eq('id', challengeId)
-        .eq('status', 'pending');
+        .eq('id', challengeId);
 
       if (error) throw error;
 
       return { success: true, message: 'Challenge rejected.' };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error rejecting challenge:', error);
-      return { success: false, message: 'Failed to reject challenge. Please try again.' };
+      return { success: false, message: error?.message || 'Failed to reject challenge. Please try again.' };
     }
   }
 
@@ -364,6 +386,26 @@ class FriendlyService {
       return data || [];
     } catch (error) {
       console.error('Error getting pending challenges:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get pending outgoing challenges (sent by the user)
+   */
+  async getOutgoingPendingChallenges(userId: string): Promise<FriendlyChallenge[]> {
+    try {
+      const { data, error } = await supabase
+        .from('friendly_challenges')
+        .select('*')
+        .eq('challenger_id', userId)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error getting outgoing pending challenges:', error);
       return [];
     }
   }

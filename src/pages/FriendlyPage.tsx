@@ -21,7 +21,7 @@ const FriendlyPage: React.FC = () => {
   const [messageType, setMessageType] = useState<'success' | 'error' | 'info'>('info');
   
   // Challenge requests
-  const [pendingChallenges, setPendingChallenges] = useState<FriendlyChallenge[]>([]);
+  const [pendingChallenges, setPendingChallenges] = useState<FriendlyChallenge[]>([]); // includes incoming + outgoing
   const [activeMatch, setActiveMatch] = useState<FriendlyMatch | null>(null);
   
   // Loading states
@@ -67,8 +67,9 @@ const FriendlyPage: React.FC = () => {
     if (!user) return;
     
     try {
-      const challenges = await friendlyService.getPendingChallenges(user.id);
-      setPendingChallenges(challenges);
+      const incoming = await friendlyService.getPendingChallenges(user.id);
+      const outgoing = await friendlyService.getOutgoingPendingChallenges(user.id);
+      setPendingChallenges([...incoming, ...outgoing]);
     } catch (error) {
       console.error('Error loading pending challenges:', error);
     } finally {
@@ -102,17 +103,18 @@ const FriendlyPage: React.FC = () => {
       
       if (payload.eventType === 'INSERT') {
         const newChallenge = payload.new as FriendlyChallenge;
-        
-        // Only add to pending list if it's a challenge TO this user
+        if (newChallenge.status !== 'pending') return;
+
+        // Add for either direction
+        setPendingChallenges(prev => {
+          const exists = prev.some(c => c.id === newChallenge.id);
+          if (!exists) {
+            return [newChallenge, ...prev];
+          }
+          return prev;
+        });
+
         if (newChallenge.challenged_id === user.id) {
-          setPendingChallenges(prev => {
-            // Check if challenge already exists to avoid duplicates
-            const exists = prev.some(c => c.id === newChallenge.id);
-            if (!exists) {
-              return [newChallenge, ...prev];
-            }
-            return prev;
-          });
           showMessage('New challenge request received!', 'info');
         }
       } else if (payload.eventType === 'UPDATE') {
@@ -236,11 +238,14 @@ const FriendlyPage: React.FC = () => {
       
       if (result.success) {
         showMessage(result.message, 'success');
+        // Optimistically remove from list
+        setPendingChallenges(prev => prev.filter(c => c.id !== challengeId));
+        // Reload challenge count/badge
+        await loadPendingChallenges();
         
-        // Don't manually remove from state - real-time subscription will handle it
         if (result.match) {
           setActiveMatch(result.match);
-          // Navigation will be handled by real-time subscription
+          navigate('/friendly/match', { state: { match: result.match } });
         }
       } else {
         showMessage(result.message, 'error');
@@ -259,7 +264,9 @@ const FriendlyPage: React.FC = () => {
       
       if (result.success) {
         showMessage(result.message, 'success');
-        // Don't manually remove from state - real-time subscription will handle it
+        // Optimistically remove from list
+        setPendingChallenges(prev => prev.filter(c => c.id !== challengeId));
+        await loadPendingChallenges();
       } else {
         showMessage(result.message, 'error');
       }
@@ -477,14 +484,25 @@ const FriendlyPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {pendingChallenges.map((challenge) => (
+                  {pendingChallenges.map((challenge) => {
+                    const isOutgoing = challenge.challenger_id === user.id;
+                    return (
                     <div key={challenge.id} className="bg-gtl-surface-dark rounded-lg p-4 border border-gtl-border">
                       <div className="flex justify-between items-start mb-3">
                         <div>
-                          <h3 className="text-gtl-text font-bold text-lg">{challenge.challenger_username}</h3>
-                          <p className="text-gtl-text-dim text-sm">
-                            Expires in: <span className="font-mono">{formatTimeRemaining(challenge.expires_at)}</span>
-                          </p>
+                          {isOutgoing ? (
+                            <>
+                              <h3 className="text-gtl-text font-bold text-lg">Challenge to {challenge.challenged_username}</h3>
+                              <p className="text-gtl-text-dim text-sm">Waiting for response...</p>
+                            </>
+                          ) : (
+                            <>
+                              <h3 className="text-gtl-text font-bold text-lg">{challenge.challenger_username}</h3>
+                              <p className="text-gtl-text-dim text-sm">
+                                Expires in: <span className="font-mono">{formatTimeRemaining(challenge.expires_at)}</span>
+                              </p>
+                            </>
+                          )}
                         </div>
                       </div>
                       
@@ -499,24 +517,27 @@ const FriendlyPage: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleAcceptChallenge(challenge.id)}
-                          disabled={isLoading}
-                          className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-500 text-white font-bold py-2 px-4 rounded transition-colors"
-                        >
-                          Accept
-                        </button>
-                        <button
-                          onClick={() => handleRejectChallenge(challenge.id)}
-                          disabled={isLoading}
-                          className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-500 text-white font-bold py-2 px-4 rounded transition-colors"
-                        >
-                          Reject
-                        </button>
-                      </div>
+                      {!isOutgoing && (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleAcceptChallenge(challenge.id)}
+                            disabled={isLoading}
+                            className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-500 text-white font-bold py-2 px-4 rounded transition-colors"
+                          >
+                            Accept
+                          </button>
+                          <button
+                            onClick={() => handleRejectChallenge(challenge.id)}
+                            disabled={isLoading}
+                            className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-500 text-white font-bold py-2 px-4 rounded transition-colors"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

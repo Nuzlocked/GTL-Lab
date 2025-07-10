@@ -71,8 +71,10 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ profile }) => {
 
     friendlyService.subscribeToChallenges(user.id, (payload) => {
       if (payload.eventType === 'INSERT') {
-        // New challenge received
-        setPendingChallengeCount(prev => prev + 1);
+        const newChallenge = payload.new as any;
+        if (newChallenge.challenged_id === user.id) {
+          setPendingChallengeCount(prev => prev + 1);
+        }
       } else if (payload.eventType === 'UPDATE') {
         const updated = payload.new as any;
         if (updated.status !== 'pending' && updated.challenged_id === user.id) {
