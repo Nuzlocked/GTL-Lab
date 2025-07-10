@@ -120,7 +120,7 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
           <div>
             <div className="flex justify-center mb-4">
               <img 
-                src="/favicon.png" 
+                src="/gtl-lab_logo.png" 
                 alt="GTL Lab Logo" 
                 className="w-12 h-12"
               />

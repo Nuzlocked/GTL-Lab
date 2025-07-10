@@ -9,6 +9,7 @@ import NavigationBar from './components/layout/NavigationBar';
 import HomePage from './pages/HomePage';
 import PracticePage from './pages/PracticePage';
 import FriendlyPage from './pages/FriendlyPage';
+import MultiplayerMatchPage from './pages/MultiplayerMatchPage';
 import RankedPage from './pages/RankedPage';
 import LeaderboardsPage from './pages/LeaderboardsPage';
 import StatsPage from './pages/StatsPage';
@@ -97,6 +98,7 @@ function AppContent() {
               <Route path="/" element={<HomePage />} />
               <Route path="/practice" element={<PracticePage />} />
               <Route path="/friendly" element={<FriendlyPage />} />
+              <Route path="/friendly/match" element={<MultiplayerMatchPage />} />
               <Route path="/ranked" element={<RankedPage />} />
               <Route path="/leaderboards" element={<LeaderboardsPage />} />
               <Route path="/stats" element={<StatsPage />} />
