@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { friendlyService } from '../../services/friendlyService';
+import { supabase } from '../../lib/supabase';
 
 interface NavigationBarProps {
   profile: {
@@ -16,6 +17,9 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ profile }) => {
   const location = useLocation();
   const [pendingChallengeCount, setPendingChallengeCount] = useState(0);
 
+  // Keep a ref to this component's dedicated channel so we can clean it up properly
+  const challengeChannelRef = useRef<any>(null);
+
   useEffect(() => {
     if (user) {
       // Initialize presence tracking
@@ -26,10 +30,17 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ profile }) => {
       loadChallengeCount();
       
       // Setup real-time challenge subscriptions
-      setupChallengeSubscriptions();
+      challengeChannelRef.current = setupChallengeSubscriptions();
       
       // Cleanup on unmount
       return () => {
+        // Clean up the dedicated realtime channel
+        if (challengeChannelRef.current) {
+          supabase.removeChannel(challengeChannelRef.current);
+          challengeChannelRef.current = null;
+        }
+
+        // Mark user offline and clean up any service-level subscriptions
         friendlyService.setOffline(user.id);
         friendlyService.cleanup();
       };
@@ -67,24 +78,36 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ profile }) => {
   };
 
   const setupChallengeSubscriptions = () => {
-    if (!user) return;
+    if (!user) return null;
 
-    friendlyService.subscribeToChallenges(user.id, (payload) => {
-      if (payload.eventType === 'INSERT') {
-        const newChallenge = payload.new as any;
-        if (newChallenge.challenged_id === user.id) {
-          setPendingChallengeCount(prev => prev + 1);
+    // Create a dedicated channel for the navbar so that other components' subscriptions
+    // won't interfere or get torn down.
+    const channel = supabase
+      .channel(`navbar_challenges_${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'friendly_challenges', filter: `challenged_id=eq.${user.id}` },
+        (payload) => {
+          setPendingChallengeCount((prev) => prev + 1);
         }
-      } else if (payload.eventType === 'UPDATE') {
-        const updated = payload.new as any;
-        if (updated.status !== 'pending' && updated.challenged_id === user.id) {
-          setPendingChallengeCount(prev => Math.max(prev - 1, 0));
-        } else {
-          // Challenge status changed but still pending (or other field) so reload list
-          loadChallengeCount();
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'friendly_challenges', filter: `challenged_id=eq.${user.id}` },
+        (payload) => {
+          const updated: any = payload.new;
+          if (updated.status !== 'pending') {
+            // A pending challenge was accepted / rejected / expired – decrement the badge
+            setPendingChallengeCount((prev) => Math.max(prev - 1, 0));
+          } else {
+            // Other field changed (e.g., expires_at) but still pending – make sure count is accurate
+            loadChallengeCount();
+          }
         }
-      }
-    });
+      )
+      .subscribe();
+
+    return channel;
   };
 
   const handleLogout = async () => {
