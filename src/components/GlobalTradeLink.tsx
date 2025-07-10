@@ -61,6 +61,35 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
   });
   const [activeShinySnipes, setActiveShinySnipes] = useState<Map<string, ShinySnipe>>(new Map());
   const [shinyOnCooldown, setShinyOnCooldown] = useState(false);
+  // Snipe scheduling state
+  const [snipesSpawned, setSnipesSpawned] = useState(0);
+  const [gameStartTime, setGameStartTime] = useState<number | null>(null);
+  const [snipeSchedule, setSnipeSchedule] = useState<number[]>([]);
+  
+  // Forced snipe scheduling constants (practice mode)
+  const MAX_SNIPES = 12;
+  const SNIPE_MIN_DELAY_MS = 2000;   // No snipe before 2s
+  const SNIPE_END_BUFFER_MS = 3000;  // Buffer at end (no spawns in last 3s)
+  const GAME_DURATION_MS = 60000;    // 60s game
+  const SNIPE_MIN_GAP_MS = 3000;     // At least 3s between snipes
+
+  // Utility to create a pseudo-random schedule that meets all constraints
+  const createSnipeSchedule = (): number[] => {
+    const schedule: number[] = [];
+    const startWindow = SNIPE_MIN_DELAY_MS;
+    const endWindow = GAME_DURATION_MS - SNIPE_END_BUFFER_MS;
+
+    for (let i = 0; i < MAX_SNIPES; i++) {
+      const remaining = MAX_SNIPES - i - 1;
+      const earliest = i === 0 ? startWindow : schedule[i - 1] + SNIPE_MIN_GAP_MS;
+      const latest = endWindow - remaining * SNIPE_MIN_GAP_MS;
+      // Random time between earliest and latest
+      const randomOffset = Math.random();
+      const nextTime = Math.floor(earliest + randomOffset * (latest - earliest));
+      schedule.push(nextTime);
+    }
+    return schedule;
+  };
   
   // Notification state
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -86,6 +115,9 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
       // Countdown finished, start the game
       setShowCountdown(false);
       setGameActive(true);
+      setGameStartTime(Date.now());
+      setSnipesSpawned(0);
+      setSnipeSchedule(createSnipeSchedule());
     }
   }, [countdown, showCountdown, areSpritesLoaded]);
 
@@ -245,7 +277,8 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
       // Generate the determined number of new listings
       if (newListingsCount > 0) {
         const newListings: PokemonListing[] = [];
-        const canSpawnShiny = gameActive ? !shinyOnCooldown : true;
+        // Disable random shiny spawns for practice mode — we'll schedule guaranteed snipes instead
+        const canSpawnShiny = false;
         
         for (let i = 0; i < newListingsCount; i++) {
           newListings.push(generateRandomListing(gameActive, canSpawnShiny, gameSettings.shinyFrequency));
@@ -286,7 +319,41 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
       
       // No UI flicker for automatic generation
     }, gameSettings.pingSimulation);
-  }, [gameActive, shinyOnCooldown, activeShinySnipes, gameSettings]);
+
+    // -------------------------------------------
+    // Guaranteed snipe spawn logic (12 total, ≥3s apart)
+    // -------------------------------------------
+    if (gameActive &&
+        gameStartTime !== null &&
+        snipesSpawned < MAX_SNIPES &&
+        snipeSchedule.length === MAX_SNIPES) {
+      const elapsedMs = Date.now() - gameStartTime;
+      const nextThresholdMs = snipeSchedule[snipesSpawned];
+
+      if (elapsedMs >= nextThresholdMs) {
+        // Force-generate a shiny listing
+        const snipeListing = generateRandomListing(true, true, 100);
+
+        // Track shiny snipe for reaction window
+        const appearTime = Date.now();
+        setActiveShinySnipes(prev => {
+          const newMap = new Map(prev);
+          newMap.set(snipeListing.id, { listingId: snipeListing.id, appearTime });
+          return newMap;
+        });
+
+        // Update stats
+        setGameStats(prev => ({
+          ...prev,
+          totalShiniesAppeared: prev.totalShiniesAppeared + 1,
+        }));
+
+        // Add to listings and increment counter
+        setListings(prev => [snipeListing, ...prev]);
+        setSnipesSpawned(prev => prev + 1);
+      }
+    }
+  }, [gameActive, shinyOnCooldown, activeShinySnipes, gameSettings, snipesSpawned, gameStartTime, snipeSchedule]);
 
   // ---------------------------------------
   // Manual refresh – just reveal current GTL
