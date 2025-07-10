@@ -121,8 +121,8 @@ const MultiplayerMatchPage: React.FC = () => {
         if (updatedMatch.id === match.id) {
           setMatch(updatedMatch);
           
-          // Check if both players have completed the match
-          if (updatedMatch.player1_stats && updatedMatch.player2_stats && matchState === 'game') {
+          // Check if both players have completed the match and we aren't already on the results screen.
+          if (updatedMatch.player1_stats && updatedMatch.player2_stats && matchState !== 'results') {
             setMatchState('results');
           }
         }
@@ -133,7 +133,7 @@ const MultiplayerMatchPage: React.FC = () => {
       // Cleanup handled by friendlyService when component unmounts
       friendlyService.cleanup();
     };
-  }, [user, match, matchState]);
+  }, [user, match?.id, matchState]);
 
   // Handle user leaving the page
   useEffect(() => {

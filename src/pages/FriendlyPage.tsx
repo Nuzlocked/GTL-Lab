@@ -127,7 +127,10 @@ const FriendlyPage: React.FC = () => {
             showMessage(`${updatedChallenge.challenged_username} accepted your challenge!`, 'success');
 
             // Proactively fetch the match and navigate (fallback in case the INSERT event is missed)
-            checkActiveMatch();
+            // Add a small delay to give the match insertion time to complete after the challenge update.
+            setTimeout(() => {
+              checkActiveMatch();
+            }, 500); // 500ms delay to allow for match insertion
           } else if (updatedChallenge.status === 'rejected') {
             showMessage(`${updatedChallenge.challenged_username} rejected your challenge.`, 'info');
           }
