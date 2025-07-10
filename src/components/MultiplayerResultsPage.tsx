@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { FriendlyMatch, GameStats } from '../services/friendlyService';
+import { friendlyService, FriendlyMatch, GameStats } from '../services/friendlyService';
 import { GameSettings } from '../types/GameSettings';
 
 interface MultiplayerResultsPageProps {
@@ -25,26 +25,42 @@ const MultiplayerResultsPage: React.FC<MultiplayerResultsPageProps> = ({
   const myUsername = isPlayer1 ? match.player1_username : match.player2_username;
   const opponentUsername = isPlayer1 ? match.player2_username : match.player1_username;
 
+  // Initial check when component mounts or match updates
   useEffect(() => {
-    // Get opponent's stats from the match
     const opponentStatsData = isPlayer1 ? match.player2_stats : match.player1_stats;
-    
     if (opponentStatsData) {
       setOpponentStats(opponentStatsData);
-      
-      // Determine winner
       const myScore = calculateScore(myStats, match.game_settings);
       const opponentScore = calculateScore(opponentStatsData, match.game_settings);
-      
-      if (myScore > opponentScore) {
-        setWinner('me');
-      } else if (opponentScore > myScore) {
-        setWinner('opponent');
-      } else {
-        setWinner('tie');
-      }
+      if (myScore > opponentScore) setWinner('me');
+      else if (opponentScore > myScore) setWinner('opponent');
+      else setWinner('tie');
     }
-  }, [match, myStats, isPlayer1]);
+  }, [match, isPlayer1, myStats]);
+
+  useEffect(() => {
+    // Fallback polling – in rare cases the realtime update can be missed and opponentStats stays null.
+    if (opponentStats) return;
+
+    const interval = setInterval(async () => {
+      const latestMatch = await friendlyService.getMatchById(match.id);
+      if (!latestMatch) return;
+
+      const latestOpponentStats = isPlayer1 ? latestMatch.player2_stats : latestMatch.player1_stats;
+      if (latestOpponentStats) {
+        setOpponentStats(latestOpponentStats);
+        // Determine winner once we finally have the stats
+        const myScore = calculateScore(myStats, latestMatch.game_settings);
+        const opponentScore = calculateScore(latestOpponentStats, latestMatch.game_settings);
+        if (myScore > opponentScore) setWinner('me');
+        else if (opponentScore > myScore) setWinner('opponent');
+        else setWinner('tie');
+        clearInterval(interval);
+      }
+    }, 2000); // poll every 2 seconds – lightweight JSON fetch
+
+    return () => clearInterval(interval);
+  }, [opponentStats, match.id, isPlayer1, myStats]);
 
   const calculateScore = (stats: GameStats, settings: GameSettings): number => {
     const successRate = stats.totalShiniesAppeared > 0 ? 

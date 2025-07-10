@@ -433,6 +433,25 @@ class FriendlyService {
   }
 
   /**
+   * Get match by ID for polling fallbacks
+   */
+  async getMatchById(matchId: string): Promise<FriendlyMatch | null> {
+    try {
+      const { data, error } = await supabase
+        .from('friendly_matches')
+        .select('*')
+        .eq('id', matchId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      return data || null;
+    } catch (error) {
+      console.error('Error fetching match by id:', error);
+      return null;
+    }
+  }
+
+  /**
    * Update match status
    */
   async updateMatchStatus(matchId: string, status: 'starting' | 'in_progress' | 'completed' | 'abandoned'): Promise<void> {
