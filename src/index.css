@@ -9,12 +9,26 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-image: url('../images/fortree.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+
+  /* Dynamic neon grid background */
+  background-color: #0a0d14; /* Deep navy backdrop */
+  background-image:
+    linear-gradient(to right, rgba(0, 255, 255, 0.15) 2px, transparent 2px),
+    linear-gradient(to bottom, rgba(0, 255, 255, 0.15) 2px, transparent 2px);
+  background-size: 64px 64px; /* Grid cell size */
   background-attachment: fixed;
+  animation: grid-pan 40s linear infinite;
+
   color: #f7fafc;
+}
+
+@keyframes grid-pan {
+  0% {
+    background-position: 0 0, 0 0;
+  }
+  100% {
+    background-position: -512px 512px, -512px 512px; /* Pan diagonally down-left */
+  }
 }
 
 code {
