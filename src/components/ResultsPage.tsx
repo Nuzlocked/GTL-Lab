@@ -43,7 +43,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({
   const performance = getPerformanceGrade();
 
   return (
-    <div className="flex items-center justify-center px-3">
+    <div className="h-screen pt-20 flex items-center justify-center px-3">
       <div className="max-w-2xl w-full rounded-2xl bg-gtl-surface-glass backdrop-blur-xl border border-white/20 shadow-2xl">
         {/* Header */}
         <div className="bg-transparent p-4">
