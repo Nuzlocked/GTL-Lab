@@ -127,25 +127,7 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
     }
   }, [showCountdown, gameActive, matchStatus, match.id]);
 
-  // Subscribe to match updates
-  useEffect(() => {
-    if (!user) return;
-
-    friendlyService.subscribeToMatches(user.id, (payload) => {
-      if (payload.eventType === 'UPDATE') {
-        const updatedMatch = payload.new as FriendlyMatch;
-        if (updatedMatch.id === match.id) {
-          setMatchStatus(updatedMatch.match_status);
-          
-          // Check if both players have submitted results
-          if (updatedMatch.player1_stats && updatedMatch.player2_stats) {
-            // Game is complete, navigate to results
-            onGameComplete(gameStats);
-          }
-        }
-      }
-    });
-  }, [user, match.id, gameStats, onGameComplete]);
+  // Removed child-level match subscription to avoid clobbering global subscription
 
   // Countdown timer effect
   useEffect(() => {

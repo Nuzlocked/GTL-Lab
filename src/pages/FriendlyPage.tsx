@@ -125,6 +125,9 @@ const FriendlyPage: React.FC = () => {
           // This is a challenge you sent that got updated
           if (updatedChallenge.status === 'accepted') {
             showMessage(`${updatedChallenge.challenged_username} accepted your challenge!`, 'success');
+
+            // Proactively fetch the match and navigate (fallback in case the INSERT event is missed)
+            checkActiveMatch();
           } else if (updatedChallenge.status === 'rejected') {
             showMessage(`${updatedChallenge.challenged_username} rejected your challenge.`, 'info');
           }
