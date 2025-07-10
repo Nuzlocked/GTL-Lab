@@ -128,17 +128,20 @@ const FriendlyPage: React.FC = () => {
           }
         } else if (updatedChallenge.challenged_id === user.id) {
           // This is a challenge to you that got updated
-          setPendingChallenges(prev => 
-            prev.map(c => c.id === updatedChallenge.id ? updatedChallenge : c)
-          );
+          // We will handle state update below in a consolidated setState
         }
         
-        // Remove challenge from pending list if it's no longer pending
-        if (updatedChallenge.status !== 'pending') {
-          setPendingChallenges(prev => 
-            prev.filter(c => c.id !== updatedChallenge.id)
-          );
-        }
+        // Consolidated state update: if status is not pending remove; otherwise add/update
+        setPendingChallenges(prev => {
+          if (updatedChallenge.status !== 'pending') {
+            return prev.filter(c => c.id !== updatedChallenge.id);
+          }
+          const exists = prev.some(c => c.id === updatedChallenge.id);
+          if (exists) {
+            return prev.map(c => (c.id === updatedChallenge.id ? updatedChallenge : c));
+          }
+          return [updatedChallenge, ...prev];
+        });
       }
     });
 

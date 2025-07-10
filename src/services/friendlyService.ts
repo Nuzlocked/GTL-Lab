@@ -395,9 +395,20 @@ class FriendlyService {
    */
   async updateMatchStatus(matchId: string, status: 'starting' | 'in_progress' | 'completed' | 'abandoned'): Promise<void> {
     try {
-      const updateData: any = { match_status: status };
-      
+      // Fetch current match to check started_at
+      let startedAt: string | null = null;
       if (status === 'in_progress') {
+        const { data } = await supabase
+          .from('friendly_matches')
+          .select('started_at')
+          .eq('id', matchId)
+          .single();
+        startedAt = data?.started_at || null;
+      }
+
+      const updateData: any = { match_status: status };
+
+      if (status === 'in_progress' && !startedAt) {
         updateData.started_at = new Date().toISOString();
       } else if (status === 'completed') {
         updateData.completed_at = new Date().toISOString();
@@ -467,7 +478,8 @@ class FriendlyService {
 
       if (error) throw error;
 
-      return { success: true, message: 'Results submitted successfully!' };
+      const completed = !!updateData.match_status && updateData.match_status === 'completed';
+      return { success: true, message: completed ? 'completed' : 'pending' };
     } catch (error) {
       console.error('Error submitting match results:', error);
       return { success: false, message: 'Failed to submit results. Please try again.' };

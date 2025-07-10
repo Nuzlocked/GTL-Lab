@@ -80,12 +80,52 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
     const initialListings = generateInitialListingsSeeded(25, seededRng);
     setListings(initialListings);
     
-    // Update match status to in_progress when component mounts
-    if (match.match_status === 'starting') {
+    // No longer immediately update match status; we'll set it once countdown finishes
+  }, [match, user]);
+
+  // Derive countdown / gameTimeLeft from server start time if available
+  useEffect(() => {
+    if (!rng) return;
+
+    const GAME_DURATION = 60; // seconds
+    const COUNTDOWN_DEFAULT = 3; // seconds
+
+    if (match.started_at) {
+      const startTimestamp = new Date(match.started_at).getTime();
+      const now = Date.now();
+
+      const elapsedSinceStart = Math.floor((now - startTimestamp) / 1000);
+
+      if (elapsedSinceStart < 0) {
+        // Match hasn't started yet – show countdown until start
+        setShowCountdown(true);
+        setCountdown(Math.abs(elapsedSinceStart));
+      } else if (elapsedSinceStart < GAME_DURATION) {
+        // Match already in progress – skip countdown
+        setShowCountdown(false);
+        setGameActive(true);
+        setGameTimeLeft(GAME_DURATION - elapsedSinceStart);
+      } else {
+        // Match time elapsed – complete game immediately
+        setShowCountdown(false);
+        setGameActive(false);
+        setGameTimeLeft(0);
+        handleGameComplete();
+      }
+    } else {
+      // No start time yet – keep default countdown
+      setCountdown(COUNTDOWN_DEFAULT);
+      setShowCountdown(true);
+    }
+  }, [match.started_at, rng]);
+
+  // When countdown ends, start game and set match in_progress (only once)
+  useEffect(() => {
+    if (!showCountdown && gameActive && matchStatus === 'starting') {
       friendlyService.updateMatchStatus(match.id, 'in_progress');
       setMatchStatus('in_progress');
     }
-  }, [match, user]);
+  }, [showCountdown, gameActive, matchStatus, match.id]);
 
   // Subscribe to match updates
   useEffect(() => {
@@ -150,12 +190,7 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
       const result = await friendlyService.submitMatchResults(match.id, user.id, gameStats);
       
       if (result.success) {
-        // Check if this completes the match (both players submitted)
-        if (result.message.includes('completed')) {
-          onGameComplete(gameStats);
-        } else {
-          addNotification('Results submitted! Waiting for opponent...', 'success');
-        }
+        onGameComplete(gameStats);
       } else {
         addNotification('Failed to submit results', 'error');
       }

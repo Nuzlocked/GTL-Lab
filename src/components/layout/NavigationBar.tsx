@@ -74,8 +74,13 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ profile }) => {
         // New challenge received
         setPendingChallengeCount(prev => prev + 1);
       } else if (payload.eventType === 'UPDATE') {
-        // Challenge status updated, reload count
-        loadChallengeCount();
+        const updated = payload.new as any;
+        if (updated.status !== 'pending' && updated.challenged_id === user.id) {
+          setPendingChallengeCount(prev => Math.max(prev - 1, 0));
+        } else {
+          // Challenge status changed but still pending (or other field) so reload list
+          loadChallengeCount();
+        }
       }
     });
   };
