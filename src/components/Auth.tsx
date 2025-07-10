@@ -7,8 +7,8 @@ interface AuthProps {
 
 export default function Auth({ onAuthSuccess }: AuthProps) {
   const [isLogin, setIsLogin] = useState(true)
-  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [username, setUsername] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
@@ -28,8 +28,9 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
 
     try {
       if (isLogin) {
+        const dummyEmail = `${username.toLowerCase()}@example.com`
         const { error } = await supabase.auth.signInWithPassword({
-          email,
+          email: dummyEmail,
           password,
         })
         if (error) throw error
@@ -42,15 +43,22 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
           setLoading(false)
           return
         }
+
+        if (password !== confirmPassword) {
+          setMessage('Passwords do not match.')
+          setLoading(false)
+          return
+        }
         
+        const dummyEmail = `${username.toLowerCase()}@example.com`
         const { data, error } = await supabase.auth.signUp({
-          email,
+          email: dummyEmail,
           password,
           options: {
             data: {
               username: username.toLowerCase() // Store as lowercase for consistency
             },
-            emailRedirectTo: window.location.origin
+            // emailRedirectTo: window.location.origin
           }
         })
 
@@ -64,12 +72,13 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
         // Profile will be created automatically by database trigger
         // No need to manually create it here
 
-        // Check if email confirmation is required
-        if (data.user && !data.user.email_confirmed_at) {
+        // Check if email confirmation is required - DISABLED
+        /* if (data.user && !data.user.email_confirmed_at) {
           setMessage('Check your email for verification link! Click the link to verify your account and then return to sign in. If you don\'t see it, check your spam folder.')
         } else {
           setMessage('Account created successfully! You can now sign in.')
-        }
+        } */
+        setMessage('Account created successfully! You can now sign in.')
       }
       
       if (onAuthSuccess) {
@@ -82,8 +91,8 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
       // Provide more specific error messages
       if (error.message?.includes('duplicate key') || error.message?.includes('already exists')) {
         setMessage('Username is already taken. Please choose a different one.')
-      } else if (error.message?.includes('Invalid email')) {
-        setMessage('Please enter a valid email address.')
+      } else if (error.message?.toLowerCase().includes('email')) {
+        setMessage('There was an issue creating the account. Please check the username and try again.')
       } else if (error.message?.includes('Password')) {
         setMessage('Password must be at least 6 characters long.')
       } else if (error.message?.includes('profiles')) {
@@ -164,22 +173,23 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
                 </div>
               )}
               
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gtl-text mb-1">
-                  Email address
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="appearance-none relative block w-full px-3 py-2 border border-gtl-border rounded-md placeholder-gtl-text-dim text-gtl-text bg-gtl-surface-light focus:outline-none focus:ring-2 focus:ring-gtl-primary focus:border-gtl-primary focus:z-10 sm:text-sm"
-                  placeholder="Email address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
+              {isLogin && (
+                <div>
+                  <label htmlFor="username-login" className="block text-sm font-medium text-gtl-text mb-1">
+                    Username
+                  </label>
+                  <input
+                    id="username-login"
+                    name="username"
+                    type="text"
+                    required
+                    className="appearance-none relative block w-full px-3 py-2 border border-gtl-border rounded-md placeholder-gtl-text-dim text-gtl-text bg-gtl-surface-light focus:outline-none focus:ring-2 focus:ring-gtl-primary focus:border-gtl-primary focus:z-10 sm:text-sm"
+                    placeholder="Username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                  />
+                </div>
+              )}
               
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gtl-text mb-1">
@@ -197,6 +207,25 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
+
+              {!isLogin && (
+                <div>
+                  <label htmlFor="confirm-password" className="block text-sm font-medium text-gtl-text mb-1">
+                    Confirm Password
+                  </label>
+                  <input
+                    id="confirm-password"
+                    name="confirm-password"
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    className="appearance-none relative block w-full px-3 py-2 border border-gtl-border rounded-md placeholder-gtl-text-dim text-gtl-text bg-gtl-surface-light focus:outline-none focus:ring-2 focus:ring-gtl-primary focus:border-gtl-primary focus:z-10 sm:text-sm"
+                    placeholder="Confirm Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                </div>
+              )}
             </div>
 
             {message && (

@@ -32,7 +32,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onStartGame }) => {
   };
 
   return (
-    <div className="h-screen pt-20 flex items-center justify-center px-3">
+    <div className="min-h-screen flex items-center justify-center px-3 pt-20">
       <div className="max-w-lg w-full rounded-2xl bg-gtl-surface-glass backdrop-blur-xl border border-white/20 shadow-2xl">
         {/* Header */}
         <div className="bg-transparent p-4">

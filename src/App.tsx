@@ -75,10 +75,10 @@ function AppContent() {
   }, []);
 
   return (
-    <div className="App">
+    <div className="App min-h-screen bg-gtl-deep">
       <Router>
-        <NavigationBar profile={profile} />
-        <main className="pt-20">
+        {user && <NavigationBar profile={profile} />}
+        <main>
           {verificationMessage && (
             <div className="bg-green-900/20 border border-green-500 text-green-300 px-4 py-3 rounded-lg mb-4">
               {verificationMessage}
