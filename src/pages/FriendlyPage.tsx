@@ -126,11 +126,25 @@ const FriendlyPage: React.FC = () => {
           if (updatedChallenge.status === 'accepted') {
             showMessage(`${updatedChallenge.challenged_username} accepted your challenge!`, 'success');
 
-            // Proactively fetch the match and navigate (fallback in case the INSERT event is missed)
-            // Add a small delay to give the match insertion time to complete after the challenge update.
-            setTimeout(() => {
-              checkActiveMatch();
-            }, 500); // 500ms delay to allow for match insertion
+            // The match INSERT event should handle navigation, but as a fallback,
+            // we'll poll for the active match to ensure navigation happens.
+            let attempts = 0;
+            const pollForMatch = setInterval(async () => {
+              attempts++;
+              if (attempts > 15) { // Poll for 3 seconds
+                clearInterval(pollForMatch);
+                return;
+              }
+
+              const match = await friendlyService.getActiveMatch(user.id);
+              if (match) {
+                clearInterval(pollForMatch);
+                // Check if we are still on the friendly page before navigating
+                if (window.location.pathname.includes('/friendly')) {
+                   navigate('/friendly/match', { state: { match } });
+                }
+              }
+            }, 200);
           } else if (updatedChallenge.status === 'rejected') {
             showMessage(`${updatedChallenge.challenged_username} rejected your challenge.`, 'info');
           }
