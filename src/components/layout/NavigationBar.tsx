@@ -34,6 +34,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ profile }) => {
             <nav className="flex items-center space-x-6">
               <NavLink to="/" className={({ isActive }) => `text-sm font-medium transition-colors duration-200 ${isActive ? 'text-gtl-text' : 'text-gray-400 hover:text-gtl-text'}`}>Home</NavLink>
               <NavLink to="/practice" className={({ isActive }) => `text-sm font-medium transition-colors duration-200 ${isActive ? 'text-gtl-text' : 'text-gray-400 hover:text-gtl-text'}`}>Practice</NavLink>
+              <NavLink to="/friendly" className={({ isActive }) => `text-sm font-medium transition-colors duration-200 ${isActive ? 'text-gtl-text' : 'text-gray-400 hover:text-gtl-text'}`}>Friendly</NavLink>
               <NavLink to="/ranked" className={({ isActive }) => `text-sm font-medium transition-colors duration-200 ${isActive ? 'text-gtl-text' : 'text-gray-400 hover:text-gtl-text'}`}>Ranked</NavLink>
               <NavLink to="/leaderboards" className={({ isActive }) => `text-sm font-medium transition-colors duration-200 ${isActive ? 'text-gtl-text' : 'text-gray-400 hover:text-gtl-text'}`}>Leaderboards</NavLink>
               <NavLink to="/stats" className={({ isActive }) => `text-sm font-medium transition-colors duration-200 ${isActive ? 'text-gtl-text' : 'text-gray-400 hover:text-gtl-text'}`}>Stats</NavLink>

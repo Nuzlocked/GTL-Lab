@@ -8,6 +8,7 @@ import './index.css';
 import NavigationBar from './components/layout/NavigationBar';
 import HomePage from './pages/HomePage';
 import PracticePage from './pages/PracticePage';
+import FriendlyPage from './pages/FriendlyPage';
 import RankedPage from './pages/RankedPage';
 import LeaderboardsPage from './pages/LeaderboardsPage';
 import StatsPage from './pages/StatsPage';
@@ -77,7 +78,7 @@ function AppContent() {
     <div className="App">
       <Router>
         <NavigationBar profile={profile} />
-        <main>
+        <main className="pt-20">
           {verificationMessage && (
             <div className="bg-green-900/20 border border-green-500 text-green-300 px-4 py-3 rounded-lg mb-4">
               {verificationMessage}
@@ -95,6 +96,7 @@ function AppContent() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/practice" element={<PracticePage />} />
+              <Route path="/friendly" element={<FriendlyPage />} />
               <Route path="/ranked" element={<RankedPage />} />
               <Route path="/leaderboards" element={<LeaderboardsPage />} />
               <Route path="/stats" element={<StatsPage />} />
