@@ -44,23 +44,23 @@ const ResultsPage: React.FC<ResultsPageProps> = ({
 
   return (
     <div className="h-screen pt-20 flex items-center justify-center px-3">
-      <div className="max-w-2xl w-full">
+      <div className="max-w-2xl w-full rounded-2xl bg-gtl-surface-glass backdrop-blur-xl border border-white/20 shadow-2xl">
         {/* Header */}
-        <div className="bg-gtl-header rounded-t-lg p-3 border-b border-gtl-border">
+        <div className="bg-transparent p-4">
           <div className="text-center">
-            <h1 className="text-lg font-bold text-gtl-text mb-1">Time's up!</h1>
-            <p className="text-gtl-text-dim text-sm">Here's how you performed</p>
+            <h1 className="text-2xl font-bold text-gtl-text mb-1">Time's up!</h1>
+            <p className="text-gtl-text-dim text-base">Here's how you performed</p>
           </div>
         </div>
 
         {/* Results Panel */}
-        <div className="bg-gtl-surface rounded-b-lg p-4">
+        <div className="bg-transparent p-6 pt-0">
           {/* Performance Grade */}
-          <div className="text-center mb-4">
-            <div className={`text-4xl font-bold ${performance.color} mb-1`}>
+          <div className="text-center mb-6">
+            <div className={`text-6xl font-bold ${performance.color} mb-1`}>
               {performance.grade}
             </div>
-            <div className="text-lg text-gtl-text font-medium mb-1">
+            <div className="text-xl text-gtl-text font-medium mb-1">
               {performance.description}
             </div>
             <div className="text-sm text-gtl-text-dim">

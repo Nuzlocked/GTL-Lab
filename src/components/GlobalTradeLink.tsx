@@ -301,7 +301,7 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
   if (showCountdown) {
     return (
       <div className="h-screen pt-20 flex items-center justify-center px-3">
-        <div className="max-w-6xl w-full relative">
+        <div className="max-w-6xl w-full relative border-4 border-gray-600 rounded-lg overflow-hidden">
           {/* Countdown Overlay */}
           <div className="absolute inset-0 bg-black bg-opacity-25 backdrop-blur-sm flex items-center justify-center z-50 rounded-lg">
             <div className="text-center text-white">
@@ -378,7 +378,7 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
         </div>
 
         {/* Notification System */}
-        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 flex flex-col items-center">
           {notifications.map((notification) => (
             <div
               key={notification.id}
@@ -393,8 +393,37 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
   }
 
   return (
-    <div className="h-screen pt-20 flex items-center justify-center px-3">
-      <div className="max-w-6xl w-full">
+    <div className="h-screen pt-20 flex flex-col items-center justify-center px-3 gap-4">
+      {/* Game Control Panel */}
+      <div className="max-w-6xl w-full rounded-2xl bg-gtl-surface-glass backdrop-blur-xl border border-white/20 shadow-2xl p-2">
+        <div className="flex items-center justify-between">
+          <>
+            <div className="flex items-center gap-2">
+              <div className="bg-red-600 text-white font-bold py-1 px-2 rounded text-sm">
+                ⏱️ Time: {formatTime(gameTimeLeft)}
+              </div>
+              <div className="bg-blue-600 text-white font-bold py-1 px-2 rounded text-sm">
+                ⭐ Snipes: {gameStats.shinySnipesCaught}
+              </div>
+              <div className="bg-purple-600 text-white font-bold py-1 px-2 rounded text-sm">
+                🎯 Attempts: {gameStats.reactionTimes.length}
+              </div>
+              <button 
+                onClick={onCancel}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-sm"
+              >
+                ❌ Cancel
+              </button>
+            </div>
+            
+            <div className="text-gtl-text text-sm">
+              <p className="font-semibold">🎯 Snipe Pokémon within {(gameSettings.snipeWindow / 1000).toFixed(1)}s!</p>
+              <p className="text-xs text-gtl-text-dim">Settings: {gameSettings.shinyFrequency}% shiny rate • {gameSettings.pingSimulation}ms ping • {gameSettings.gtlActivity} max/refresh • {(gameSettings.snipeWindow / 1000).toFixed(1)}s window</p>
+            </div>
+          </>
+        </div>
+      </div>
+      <div className="max-w-6xl w-full border-4 border-gray-600 rounded-lg overflow-hidden">
         {/* Header */}
         <div className="bg-gtl-header rounded-t-lg p-2 border-b border-gtl-border">
           <div className="flex items-center justify-between">
@@ -403,35 +432,8 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
           </div>
         </div>
 
-        {/* Game Control Panel */}
-        <div className="bg-gtl-surface border-b border-gtl-border p-2">
-          <div className="flex items-center justify-between">
-                <>
-                  <div className="flex items-center gap-2">
-                    <div className="bg-red-600 text-white font-bold py-1 px-2 rounded text-sm">
-                      ⏱️ Time: {formatTime(gameTimeLeft)}
-                    </div>
-                    <div className="bg-blue-600 text-white font-bold py-1 px-2 rounded text-sm">
-                      ⭐ Snipes: {gameStats.shinySnipesCaught}
-                    </div>
-                    <div className="bg-purple-600 text-white font-bold py-1 px-2 rounded text-sm">
-                      🎯 Attempts: {gameStats.reactionTimes.length}
-                    </div>
-                    <button 
-                      onClick={onCancel}
-                      className="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-sm"
-                    >
-                      ❌ Cancel
-                    </button>
-                  </div>
-                  
-                  <div className="text-gtl-text text-sm">
-                    <p className="font-semibold">🎯 Snipe Pokémon within {(gameSettings.snipeWindow / 1000).toFixed(1)}s!</p>
-                    <p className="text-xs text-gtl-text-dim">Settings: {gameSettings.shinyFrequency}% shiny rate • {gameSettings.pingSimulation}ms ping • {gameSettings.gtlActivity} max/refresh • {(gameSettings.snipeWindow / 1000).toFixed(1)}s window</p>
-                  </div>
-                </>
-          </div>
-        </div>
+        {/* Game Control Panel is now above */}
+        
 
           <>
         {/* Navigation Tabs */}
@@ -479,7 +481,7 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
       </div>
 
       {/* Notification System */}
-      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
+      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 flex flex-col items-center">
         {notifications.map((notification) => (
           <div
             key={notification.id}

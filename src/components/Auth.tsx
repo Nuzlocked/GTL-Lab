@@ -104,7 +104,7 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-sm w-full space-y-6">
         {/* Main auth card with GTL theme */}
-        <div className="bg-gtl-surface rounded-lg shadow-lg border border-gtl-border p-6">
+        <div className="rounded-2xl bg-gtl-surface-glass backdrop-blur-xl border border-white/20 shadow-2xl p-6">
           <div>
             <div className="flex justify-center mb-4">
               <img 

@@ -33,9 +33,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onStartGame }) => {
 
   return (
     <div className="h-screen pt-20 flex items-center justify-center px-3">
-      <div className="max-w-lg w-full">
+      <div className="max-w-lg w-full rounded-2xl bg-gtl-surface-glass backdrop-blur-xl border border-white/20 shadow-2xl">
         {/* Header */}
-        <div className="bg-gtl-header rounded-t-lg p-4 border-b border-gtl-border">
+        <div className="bg-transparent p-4">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gtl-text mb-1">Welcome to GTL Lab!</h1>
             <p className="text-gtl-text-dim text-base">Configure your game settings and test your reaction time!</p>
@@ -43,7 +43,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onStartGame }) => {
         </div>
 
         {/* Settings Panel */}
-        <div className="bg-gtl-surface rounded-b-lg p-6">
+        <div className="bg-transparent p-6 pt-0">
           <div className="space-y-6">
             
             {/* Preset Selector */}
@@ -179,8 +179,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onStartGame }) => {
             )}
 
             {/* Settings Summary */}
-            <div className="bg-blue-600 bg-opacity-20 rounded-lg p-4 border border-blue-600">
-              <h3 className="text-blue-400 text-lg font-bold mb-3">
+            <div className="bg-blue-600/30 rounded-lg p-4 shadow-lg border border-white/10">
+              <h3 className="text-blue-300 text-lg font-bold mb-3">
                 📊 Current Configuration
                 {selectedPreset !== 'custom' && (
                   <span className="text-sm font-normal ml-2">({selectedPreset} Preset)</span>
@@ -212,7 +212,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onStartGame }) => {
             </div>
 
             {/* Game Rules */}
-            <div className="bg-gtl-surface-light rounded-lg p-4 border border-gtl-border">
+            <div className="bg-gtl-surface-dark/50 rounded-lg p-4 shadow-lg border border-white/10">
               <h3 className="text-gtl-text text-lg font-bold mb-3">📋 Game Rules</h3>
               <ul className="text-gtl-text space-y-1 text-sm">
                 <li>• Game lasts 60 seconds</li>
