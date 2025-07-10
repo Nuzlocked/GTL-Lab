@@ -531,7 +531,7 @@ class FriendlyService {
   /**
    * Subscribe to challenge updates (both incoming and outgoing)
    */
-  subscribeToChallenges(userId: string, callback: (payload: any) => void): void {
+  subscribeToChallenges(userId: string, callback: (payload: any) => void) {
     // Clean up any existing subscription
     if (this.challengeSubscription) {
       supabase.removeChannel(this.challengeSubscription);
@@ -560,12 +560,14 @@ class FriendlyService {
         callback
       )
       .subscribe();
+      
+    return this.challengeSubscription;
   }
 
   /**
    * Subscribe to match updates
    */
-  subscribeToMatches(userId: string, callback: (payload: any) => void): void {
+  subscribeToMatches(userId: string, callback: (payload: any) => void) {
     // Clean up any existing subscription
     if (this.matchSubscription) {
       supabase.removeChannel(this.matchSubscription);
@@ -594,6 +596,8 @@ class FriendlyService {
         callback
       )
       .subscribe();
+      
+    return this.matchSubscription;
   }
 
   /**
