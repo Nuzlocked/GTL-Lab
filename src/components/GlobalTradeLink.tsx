@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import PokemonListings from './PokemonListings';
 import { generateInitialListings, generateRandomListing } from '../data/mockData';
 import { PokemonListing } from '../types/Pokemon';
@@ -39,7 +39,11 @@ interface GlobalTradeLinkProps {
 }
 
 const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameComplete, onCancel }) => {
-  const [listings, setListings] = useState<PokemonListing[]>([]);
+  // "listings" holds the authoritative GTL state that is updated automatically every
+  // second. "visibleListings" is the snapshot that the player currently sees and is
+  // only updated when they press the refresh button.
+  const [listings, setListings] = useState<PokemonListing[]>([]); // hidden / true state
+  const [visibleListings, setVisibleListings] = useState<PokemonListing[]>([]); // user-visible state
   const [activeTab, setActiveTab] = useState('pokemon');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { areSpritesLoaded } = useSpriteLoading();
@@ -65,6 +69,7 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
   useEffect(() => {
     const initialListings = generateInitialListings(25); // Start with 25 listings to test pagination
     setListings(initialListings);
+    setVisibleListings(initialListings);
   }, []);
 
   // Countdown timer effect
@@ -146,7 +151,7 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
         });
         
         addNotification("Listing not found.", 'error');
-        handleRefresh(); // Trigger refresh on failed purchase
+        handleDisplayRefresh(); // Reveal current state on failed purchase
         return;
       }
       
@@ -169,15 +174,19 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
       });
     }
 
-    // Remove listing and show success message
+    // Remove listing from both authoritative and visible states, then show success
     setListings(prev => prev.filter(listing => listing.id !== listingId));
+    setVisibleListings(prev => prev.filter(listing => listing.id !== listingId));
     addNotification("You successfully purchased this listing.", 'success');
   };
 
-  // Enhanced refresh function with game mechanics
-  const handleRefresh = () => {
-    // Start flicker effect
-    setIsRefreshing(true);
+  // -----------------------------
+  // Generation logic (runs every second automatically)
+  // -----------------------------
+  const generateListings = useCallback(() => {
+    // NOTE: We intentionally do NOT start the flicker effect here because this
+    // function is executed automatically every second and should not visibly
+    // disturb the user interface.
     
     // Remove expired shiny snipes from listings if game is active
     if (gameActive) {
@@ -275,10 +284,34 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
         setListings(prev => [...newListings, ...prev]);
       }
       
-      // End flicker effect
+      // No UI flicker for automatic generation
+    }, gameSettings.pingSimulation);
+  }, [gameActive, shinyOnCooldown, activeShinySnipes, gameSettings]);
+
+  // ---------------------------------------
+  // Manual refresh – just reveal current GTL
+  // ---------------------------------------
+  const handleDisplayRefresh = () => {
+    // Start flicker effect so the user still experiences the network-like flash
+    setIsRefreshing(true);
+
+    setTimeout(() => {
+      // Expose the latest authoritative listings to the user
+      setVisibleListings(listings);
       setIsRefreshing(false);
     }, gameSettings.pingSimulation);
   };
+
+  // ---------------------------------------
+  // Automatic generation interval – create new GTL entries every 0.5s
+  // ---------------------------------------
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      generateListings();
+    }, 500);
+
+    return () => clearInterval(intervalId);
+  }, [generateListings]);
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -358,9 +391,9 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
           <div className="bg-gtl-surface rounded-b-lg">
             {activeTab === 'pokemon' && (
               <PokemonListings 
-                listings={listings} 
+                listings={visibleListings} 
                 onPurchase={handlePurchase} 
-                onRefresh={handleRefresh} 
+                onRefresh={handleDisplayRefresh} 
                 isRefreshing={isRefreshing}
                 gameActive={gameActive}
                 activeShinySnipes={activeShinySnipes}
@@ -459,9 +492,9 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
         <div className="bg-gtl-surface rounded-b-lg">
           {activeTab === 'pokemon' && (
             <PokemonListings 
-              listings={listings} 
+              listings={visibleListings} 
               onPurchase={handlePurchase} 
-              onRefresh={handleRefresh} 
+              onRefresh={handleDisplayRefresh} 
               isRefreshing={isRefreshing}
               gameActive={gameActive}
               activeShinySnipes={activeShinySnipes}

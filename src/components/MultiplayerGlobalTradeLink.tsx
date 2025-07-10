@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import PokemonListings from './PokemonListings';
 import { generateInitialListingsSeeded, generateRandomListingSeeded } from '../data/mockData';
 import { PokemonListing } from '../types/Pokemon';
@@ -39,7 +39,9 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
   onCancel 
 }) => {
   const { user } = useAuth();
+  // listings = authoritative GTL state, visibleListings = what user currently sees
   const [listings, setListings] = useState<PokemonListing[]>([]);
+  const [visibleListings, setVisibleListings] = useState<PokemonListing[]>([]);
   const [activeTab, setActiveTab] = useState('pokemon');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { areSpritesLoaded } = useSpriteLoading();
@@ -79,6 +81,7 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
     // Initialize listings with seeded RNG
     const initialListings = generateInitialListingsSeeded(25, seededRng);
     setListings(initialListings);
+    setVisibleListings(initialListings);
     
     // No longer immediately update match status; we'll set it once countdown finishes
   }, [match, user]);
@@ -214,7 +217,7 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
         });
         
         addNotification("Listing not found.", 'error');
-        handleRefresh();
+        handleDisplayRefresh();
         return;
       }
       
@@ -235,40 +238,37 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
     }
 
     setListings(prev => prev.filter(listing => listing.id !== listingId));
+    setVisibleListings(prev => prev.filter(listing => listing.id !== listingId));
     addNotification("You successfully purchased this listing.", 'success');
   };
 
-  const handleRefresh = () => {
+  // -----------------------------
+  // Generation logic (runs every second)
+  // -----------------------------
+  const generateListings = useCallback(() => {
     if (!rng) return;
-    
-    setIsRefreshing(true);
-    
+
     // Remove expired shiny snipes
     if (gameActive) {
       const currentTime = Date.now();
       const expiredListingIds: string[] = [];
-      
+
       activeShinySnipes.forEach((snipe, listingId) => {
         const elapsed = currentTime - snipe.appearTime;
         if (elapsed > match.game_settings.snipeWindow) {
           expiredListingIds.push(listingId);
         }
       });
-      
+
       if (expiredListingIds.length > 0) {
         setListings(prev => prev.filter(listing => !expiredListingIds.includes(listing.id)));
-        setActiveShinySnipes(prev => {
-          const newMap = new Map(prev);
-          expiredListingIds.forEach(id => newMap.delete(id));
-          return newMap;
-        });
+        setVisibleListings(prev => prev.filter(listing => !expiredListingIds.includes(listing.id)));
       }
     }
-    
+
     // Generate new listings using seeded RNG
     const random = rng.random();
     let newListingsCount = 0;
-    
     const maxPokemon = match.game_settings.gtlActivity;
     if (random < 0.5) {
       newListingsCount = 0;
@@ -279,52 +279,69 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
     } else {
       newListingsCount = maxPokemon;
     }
-    
+
     setTimeout(() => {
       if (gameActive && shinyOnCooldown) {
         setShinyOnCooldown(false);
       }
-      
+
       if (newListingsCount > 0) {
         const newListings: PokemonListing[] = [];
         const canSpawnShiny = gameActive ? !shinyOnCooldown : true;
-        
+
         for (let i = 0; i < newListingsCount; i++) {
           newListings.push(generateRandomListingSeeded(rng, gameActive, canSpawnShiny, match.game_settings.shinyFrequency));
         }
-        
+
         if (gameActive) {
           let shinySpawned = false;
-          
+
           newListings.forEach(listing => {
             if (listing.pokemon.isShiny) {
               shinySpawned = true;
               const appearTime = Date.now();
-              
               setActiveShinySnipes(prev => {
                 const newMap = new Map(prev);
                 newMap.set(listing.id, { listingId: listing.id, appearTime });
                 return newMap;
               });
-              
               setGameStats(prev => ({
                 ...prev,
                 totalShiniesAppeared: prev.totalShiniesAppeared + 1,
               }));
             }
           });
-          
+
           if (shinySpawned) {
             setShinyOnCooldown(true);
           }
         }
-        
+
         setListings(prev => [...newListings, ...prev]);
       }
-      
+    }, match.game_settings.pingSimulation);
+  }, [rng, gameActive, activeShinySnipes, shinyOnCooldown, match.game_settings]);
+
+  // ---------------------------------------
+  // Manual refresh – reveal current GTL state
+  // ---------------------------------------
+  const handleDisplayRefresh = () => {
+    setIsRefreshing(true);
+    setTimeout(() => {
+      setVisibleListings(listings);
       setIsRefreshing(false);
     }, match.game_settings.pingSimulation);
   };
+
+  // Automatic generation interval – generate every 0.5s
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      generateListings();
+    }, 500);
+    return () => clearInterval(intervalId);
+  }, [generateListings]);
+
+  // (Old) refresh button now mapped directly to handleDisplayRefresh
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -416,9 +433,9 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
           <div className="bg-gtl-surface rounded-b-lg">
             {activeTab === 'pokemon' && (
               <PokemonListings 
-                listings={listings} 
+                listings={visibleListings} 
                 onPurchase={handlePurchase} 
-                onRefresh={handleRefresh} 
+                onRefresh={handleDisplayRefresh} 
                 isRefreshing={isRefreshing}
                 gameActive={gameActive}
                 activeShinySnipes={activeShinySnipes}
@@ -498,9 +515,9 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
         <div className="bg-gtl-surface rounded-b-lg">
           {activeTab === 'pokemon' && (
             <PokemonListings 
-              listings={listings} 
+              listings={visibleListings} 
               onPurchase={handlePurchase} 
-              onRefresh={handleRefresh} 
+              onRefresh={handleDisplayRefresh} 
               isRefreshing={isRefreshing}
               gameActive={gameActive}
               activeShinySnipes={activeShinySnipes}
