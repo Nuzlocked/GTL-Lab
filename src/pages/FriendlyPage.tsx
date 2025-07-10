@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { GameSettings, GAME_PRESETS } from '../types/GameSettings';
 import { friendlyService, FriendlyChallenge, FriendlyMatch } from '../services/friendlyService';
+import { PresenceDiagnosticPanel } from '../components/PresenceDiagnosticPanel';
 
 const FriendlyPage: React.FC = () => {
   const { user } = useAuth();
@@ -24,6 +25,9 @@ const FriendlyPage: React.FC = () => {
   
   // Loading states
   const [challengesLoading, setChallengesLoading] = useState(true);
+  
+  // Diagnostic panel state
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -229,6 +233,16 @@ const FriendlyPage: React.FC = () => {
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gtl-text mb-2">Friendly Matches</h1>
           <p className="text-gtl-text-dim">Challenge other players to head-to-head matches</p>
+          
+          {/* Diagnostic Button */}
+          <div className="mt-4">
+            <button
+              onClick={() => setShowDiagnostics(true)}
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg transition-colors"
+            >
+              🔧 Debug Presence Tracking
+            </button>
+          </div>
         </div>
 
         {/* Message Display */}
@@ -455,6 +469,11 @@ const FriendlyPage: React.FC = () => {
           </div>
         </div>
       </div>
+      
+      {/* Diagnostic Panel */}
+      {showDiagnostics && (
+        <PresenceDiagnosticPanel onClose={() => setShowDiagnostics(false)} />
+      )}
     </div>
   );
 };

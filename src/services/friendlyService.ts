@@ -154,14 +154,12 @@ class FriendlyService {
    */
   async isUserOnline(username: string): Promise<boolean> {
     try {
-      const { data, error } = await supabase
-        .from('user_presence')
-        .select('is_online')
-        .eq('user_id', supabase.auth.getUser().then(({ data }) => data?.user?.id))
-        .single();
+      // First get the user by username
+      const user = await this.getUserByUsername(username);
+      if (!user) return false;
 
-      if (error) return false;
-      return data?.is_online || false;
+      // Then check if that user is online
+      return await this.isUserOnlineById(user.id);
     } catch (error) {
       console.error('Error checking user online status:', error);
       return false;
