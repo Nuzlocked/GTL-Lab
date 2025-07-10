@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { GameSettings, GAME_PRESETS } from '../types/GameSettings';
 import { friendlyService, FriendlyChallenge, FriendlyMatch } from '../services/friendlyService';
-import { PresenceDiagnosticPanel } from '../components/PresenceDiagnosticPanel';
 
 const FriendlyPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const cleanupRef = useRef<(() => void) | null>(null);
   
   // Settings state
   const [settings, setSettings] = useState<GameSettings>(GAME_PRESETS[0].settings);
@@ -25,9 +26,6 @@ const FriendlyPage: React.FC = () => {
   
   // Loading states
   const [challengesLoading, setChallengesLoading] = useState(true);
-  
-  // Diagnostic panel state
-  const [showDiagnostics, setShowDiagnostics] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -38,12 +36,32 @@ const FriendlyPage: React.FC = () => {
       // Initialize presence for friendly page
       friendlyService.initializePresence(user.id, 'friendly');
       
-      // Update presence when page changes
-      return () => {
+      // Cleanup function
+      cleanupRef.current = () => {
+        friendlyService.cleanup();
         friendlyService.updatePresencePage(user.id, 'home');
       };
+      
+      // Return cleanup function
+      return cleanupRef.current;
     }
+
+    return () => {
+      if (cleanupRef.current) {
+        cleanupRef.current();
+      }
+    };
   }, [user]);
+
+  // Handle navigation state messages (like rematch confirmations)
+  useEffect(() => {
+    const navigationState = location.state as any;
+    if (navigationState?.message) {
+      showMessage(navigationState.message, navigationState.messageType || 'info');
+      // Clear the navigation state to prevent the message from showing again
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [location]);
 
   const loadPendingChallenges = async () => {
     if (!user) return;
@@ -65,8 +83,8 @@ const FriendlyPage: React.FC = () => {
       const match = await friendlyService.getActiveMatch(user.id);
       if (match) {
         setActiveMatch(match);
-        // If match is starting, redirect to game
-        if (match.match_status === 'starting') {
+        // If match is starting or in progress, redirect to game immediately
+        if (match.match_status === 'starting' || match.match_status === 'in_progress') {
           navigate('/friendly/match', { state: { match } });
         }
       }
@@ -78,34 +96,76 @@ const FriendlyPage: React.FC = () => {
   const setupRealtimeSubscriptions = () => {
     if (!user) return;
 
-    // Subscribe to challenges
+    // Subscribe to challenges (both incoming and outgoing)
     friendlyService.subscribeToChallenges(user.id, (payload) => {
+      console.log('Challenge subscription event:', payload);
+      
       if (payload.eventType === 'INSERT') {
         const newChallenge = payload.new as FriendlyChallenge;
-        setPendingChallenges(prev => [newChallenge, ...prev]);
-        showMessage('New challenge request received!', 'info');
+        
+        // Only add to pending list if it's a challenge TO this user
+        if (newChallenge.challenged_id === user.id) {
+          setPendingChallenges(prev => {
+            // Check if challenge already exists to avoid duplicates
+            const exists = prev.some(c => c.id === newChallenge.id);
+            if (!exists) {
+              return [newChallenge, ...prev];
+            }
+            return prev;
+          });
+          showMessage('New challenge request received!', 'info');
+        }
       } else if (payload.eventType === 'UPDATE') {
         const updatedChallenge = payload.new as FriendlyChallenge;
-        setPendingChallenges(prev => 
-          prev.map(c => c.id === updatedChallenge.id ? updatedChallenge : c)
-        );
+        
+        // Handle challenge status updates
+        if (updatedChallenge.challenger_id === user.id) {
+          // This is a challenge you sent that got updated
+          if (updatedChallenge.status === 'accepted') {
+            showMessage(`${updatedChallenge.challenged_username} accepted your challenge!`, 'success');
+          } else if (updatedChallenge.status === 'rejected') {
+            showMessage(`${updatedChallenge.challenged_username} rejected your challenge.`, 'info');
+          }
+        } else if (updatedChallenge.challenged_id === user.id) {
+          // This is a challenge to you that got updated
+          setPendingChallenges(prev => 
+            prev.map(c => c.id === updatedChallenge.id ? updatedChallenge : c)
+          );
+        }
+        
+        // Remove challenge from pending list if it's no longer pending
+        if (updatedChallenge.status !== 'pending') {
+          setPendingChallenges(prev => 
+            prev.filter(c => c.id !== updatedChallenge.id)
+          );
+        }
       }
     });
 
     // Subscribe to matches
     friendlyService.subscribeToMatches(user.id, (payload) => {
+      console.log('Match subscription event:', payload);
+      
       if (payload.eventType === 'INSERT') {
         const newMatch = payload.new as FriendlyMatch;
         setActiveMatch(newMatch);
-        // Redirect to match
-        navigate('/friendly/match', { state: { match: newMatch } });
+        showMessage('Match is starting!', 'success');
+        
+        // Automatically navigate to match
+        setTimeout(() => {
+          navigate('/friendly/match', { state: { match: newMatch } });
+        }, 1000); // Small delay to show the message
+        
       } else if (payload.eventType === 'UPDATE') {
         const updatedMatch = payload.new as FriendlyMatch;
         setActiveMatch(updatedMatch);
         
         // Handle match status changes
-        if (updatedMatch.match_status === 'starting') {
+        if (updatedMatch.match_status === 'starting' || updatedMatch.match_status === 'in_progress') {
           navigate('/friendly/match', { state: { match: updatedMatch } });
+        } else if (updatedMatch.match_status === 'completed') {
+          setActiveMatch(null);
+          showMessage('Match completed!', 'info');
         }
       }
     });
@@ -114,7 +174,10 @@ const FriendlyPage: React.FC = () => {
   const showMessage = (text: string, type: 'success' | 'error' | 'info') => {
     setMessage(text);
     setMessageType(type);
-    setTimeout(() => setMessage(''), 5000);
+    
+    // Different timeouts for different message types
+    const timeout = type === 'error' ? 8000 : type === 'success' ? 6000 : 5000;
+    setTimeout(() => setMessage(''), timeout);
   };
 
   const handleSliderChange = (key: keyof GameSettings, value: number) => {
@@ -170,12 +233,11 @@ const FriendlyPage: React.FC = () => {
       
       if (result.success) {
         showMessage(result.message, 'success');
-        // Remove challenge from pending list
-        setPendingChallenges(prev => prev.filter(c => c.id !== challengeId));
         
+        // Don't manually remove from state - real-time subscription will handle it
         if (result.match) {
           setActiveMatch(result.match);
-          // Navigate to match will be handled by real-time subscription
+          // Navigation will be handled by real-time subscription
         }
       } else {
         showMessage(result.message, 'error');
@@ -194,8 +256,7 @@ const FriendlyPage: React.FC = () => {
       
       if (result.success) {
         showMessage(result.message, 'success');
-        // Remove challenge from pending list
-        setPendingChallenges(prev => prev.filter(c => c.id !== challengeId));
+        // Don't manually remove from state - real-time subscription will handle it
       } else {
         showMessage(result.message, 'error');
       }
@@ -233,16 +294,6 @@ const FriendlyPage: React.FC = () => {
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gtl-text mb-2">Friendly Matches</h1>
           <p className="text-gtl-text-dim">Challenge other players to head-to-head matches</p>
-          
-          {/* Diagnostic Button */}
-          <div className="mt-4">
-            <button
-              onClick={() => setShowDiagnostics(true)}
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg transition-colors"
-            >
-              🔧 Debug Presence Tracking
-            </button>
-          </div>
         </div>
 
         {/* Message Display */}
@@ -469,11 +520,6 @@ const FriendlyPage: React.FC = () => {
           </div>
         </div>
       </div>
-      
-      {/* Diagnostic Panel */}
-      {showDiagnostics && (
-        <PresenceDiagnosticPanel onClose={() => setShowDiagnostics(false)} />
-      )}
     </div>
   );
 };

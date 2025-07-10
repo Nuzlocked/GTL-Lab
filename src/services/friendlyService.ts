@@ -475,11 +475,16 @@ class FriendlyService {
   }
 
   /**
-   * Subscribe to challenge updates
+   * Subscribe to challenge updates (both incoming and outgoing)
    */
   subscribeToChallenges(userId: string, callback: (payload: any) => void): void {
+    // Clean up any existing subscription
+    if (this.challengeSubscription) {
+      supabase.removeChannel(this.challengeSubscription);
+    }
+
     this.challengeSubscription = supabase
-      .channel('friendly_challenges')
+      .channel('friendly_challenges_' + userId)
       .on(
         'postgres_changes',
         {
@@ -490,6 +495,16 @@ class FriendlyService {
         },
         callback
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'friendly_challenges',
+          filter: `challenger_id=eq.${userId}`
+        },
+        callback
+      )
       .subscribe();
   }
 
@@ -497,8 +512,13 @@ class FriendlyService {
    * Subscribe to match updates
    */
   subscribeToMatches(userId: string, callback: (payload: any) => void): void {
+    // Clean up any existing subscription
+    if (this.matchSubscription) {
+      supabase.removeChannel(this.matchSubscription);
+    }
+
     this.matchSubscription = supabase
-      .channel('friendly_matches')
+      .channel('friendly_matches_' + userId)
       .on(
         'postgres_changes',
         {
