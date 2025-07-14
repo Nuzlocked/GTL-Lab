@@ -43,6 +43,13 @@ const MultiplayerMatchPage: React.FC = () => {
       if (activeMatch) {
         setMatch(activeMatch);
         
+        // Check if match was abandoned (forfeited)
+        if (activeMatch.match_status === 'abandoned') {
+          setError('Match was forfeited');
+          setMatchState('error');
+          return;
+        }
+        
         // Check if both players have completed the match
         if (activeMatch.player1_stats && activeMatch.player2_stats) {
           // Both players have submitted results, show results page
@@ -120,6 +127,13 @@ const MultiplayerMatchPage: React.FC = () => {
         
         if (updatedMatch.id === match.id) {
           setMatch(updatedMatch);
+          
+          // Check if match was abandoned (forfeited)
+          if (updatedMatch.match_status === 'abandoned') {
+            setError('Match was forfeited by opponent');
+            setMatchState('error');
+            return;
+          }
           
           // Check if both players have completed the match and we aren't already on the results screen.
           if (updatedMatch.player1_stats && updatedMatch.player2_stats && matchState !== 'results') {

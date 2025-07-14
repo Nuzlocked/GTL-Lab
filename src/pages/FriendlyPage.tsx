@@ -45,17 +45,25 @@ const FriendlyPage: React.FC = () => {
       const match = await friendlyService.getActiveMatch(user.id);
       if (match) {
         console.log('[checkServerState] Found active match:', match.id);
-        setActiveMatch(match);
-        // If we found a match, navigate immediately if we're not already heading there.
-        // The check on pathname prevents re-navigation after clicking "back" from the match page.
-        if (location.pathname.includes('/friendly')) {
-            console.log('[checkServerState] Navigating to match page...');
-            navigate('/friendly/match', { state: { match } });
+        
+        // Don't navigate to abandoned matches
+        if (match.match_status === 'abandoned') {
+          console.log('[checkServerState] Match was abandoned, not navigating.');
+          setActiveMatch(null);
+        } else {
+          setActiveMatch(match);
+          // If we found a match, navigate immediately if we're not already heading there.
+          // The check on pathname prevents re-navigation after clicking "back" from the match page.
+          if (location.pathname.includes('/friendly')) {
+              console.log('[checkServerState] Navigating to match page...');
+              navigate('/friendly/match', { state: { match } });
+          }
+          return; // Stop further checks if a match is active
         }
-        return; // Stop further checks if a match is active
+      } else {
+        console.log('[checkServerState] No active match found.');
+        setActiveMatch(null);
       }
-       console.log('[checkServerState] No active match found.');
-       setActiveMatch(null);
     } catch (error) {
       console.error('[checkServerState] Error checking for active match:', error);
     }
@@ -99,10 +107,17 @@ const FriendlyPage: React.FC = () => {
 
       // If we received the full match data, navigate immediately for both challenger and acceptor.
       if (newMatch) {
-        setActiveMatch(newMatch);
-        console.log('[MatchSub] Navigating to match page with match:', newMatch.id);
-        setRedirectMatch(newMatch);
-        navigate('/friendly/match', { state: { match: newMatch } });
+        // Don't navigate to abandoned matches
+        if (newMatch.match_status === 'abandoned') {
+          console.log('[MatchSub] Match was abandoned, not navigating.');
+          setActiveMatch(null);
+          checkServerState(); // Re-sync to clear any active match state
+        } else {
+          setActiveMatch(newMatch);
+          console.log('[MatchSub] Navigating to match page with match:', newMatch.id);
+          setRedirectMatch(newMatch);
+          navigate('/friendly/match', { state: { match: newMatch } });
+        }
       } else {
         // Fallback: just re-sync state from the server.
         checkServerState();
@@ -259,7 +274,7 @@ const FriendlyPage: React.FC = () => {
           </div>
         )}
 
-        {activeMatch && (
+        {activeMatch && activeMatch.match_status !== 'abandoned' && (
           <div className="bg-yellow-900/20 border border-yellow-500 text-yellow-300 p-4 rounded-lg">
             <div className="flex items-center justify-between">
               <div>

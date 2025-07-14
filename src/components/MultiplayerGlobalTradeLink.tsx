@@ -233,6 +233,26 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
     }, 3000);
   };
 
+  const handleForfeit = async () => {
+    try {
+      // Update match status to abandoned
+      await friendlyService.updateMatchStatus(match.id, 'abandoned');
+      addNotification('Match forfeited', 'error');
+      
+      // Small delay to show the notification, then exit
+      setTimeout(() => {
+        onCancel();
+      }, 1000);
+    } catch (error) {
+      console.error('Error forfeiting match:', error);
+      addNotification('Failed to forfeit match', 'error');
+      // Still allow user to exit even if the forfeit fails
+      setTimeout(() => {
+        onCancel();
+      }, 1000);
+    }
+  };
+
   const handlePurchase = (listingId: string) => {
     if (gameActive && activeShinySnipes.has(listingId)) {
       const snipe = activeShinySnipes.get(listingId)!;
@@ -474,10 +494,10 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
                 </p>
               )}
               <button
-                onClick={onCancel}
+                onClick={handleForfeit}
                 className="mt-8 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
               >
-                ❌ Cancel
+                🏳️ Forfeit
               </button>
             </div>
           </div>
@@ -551,10 +571,10 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
               👤 vs {opponentUsername}
             </div>
             <button 
-              onClick={onCancel}
+              onClick={handleForfeit}
               className="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-sm"
             >
-              ❌ Cancel
+              🏳️ Forfeit
             </button>
           </div>
           
