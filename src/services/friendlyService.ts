@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
-import { GameSettings } from '../types/GameSettings';
+import { GameSettings, GAME_PRESETS } from '../types/GameSettings';
 import { generateMatchSeed } from '../utils/seededRng';
+import { recordPersonalBest } from './personalBestService';
 
 export interface UserPresence {
   user_id: string;
@@ -540,6 +541,22 @@ class FriendlyService {
 
       if (error) throw error;
 
+      // Record personal best for this player
+      try {
+        const category = getCategoryFromSettings(match.game_settings);
+        if (category) {
+          await recordPersonalBest(playerId, category, {
+            shinySnipesCaught: playerStats.shinySnipesCaught,
+            totalAttempts: playerStats.totalAttempts,
+            totalReactionTime: playerStats.totalReactionTime,
+            reactionTimes: playerStats.reactionTimes,
+          });
+        }
+      } catch (error) {
+        console.error('Error recording personal best:', error);
+        // Don't fail the entire operation if personal best recording fails
+      }
+
       const completed = !!updateData.match_status && updateData.match_status === 'completed';
       return { success: true, message: completed ? 'completed' : 'pending' };
     } catch (error) {
@@ -649,5 +666,13 @@ class FriendlyService {
     }
   }
 }
+
+// Helper function to determine category from game settings
+const getCategoryFromSettings = (settings: GameSettings): string | null => {
+  // Determine category by matching to preset settings (same logic as PracticePage)
+  const match = GAME_PRESETS.find(p => JSON.stringify(p.settings) === JSON.stringify(settings));
+  if (!match) return null;
+  return match.name === 'Normal Day' ? 'Normal' : match.name;
+};
 
 export const friendlyService = new FriendlyService(); 
