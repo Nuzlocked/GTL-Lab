@@ -81,7 +81,7 @@ const PokemonListings: React.FC<PokemonListingsProps> = ({
   return (
     <div className="p-1">
       {/* Controls */}
-      <div className="flex items-center justify-end mb-2">
+      <div className="flex items-center justify-end mb-2 select-none">
         <div className="flex items-center gap-2">
           <select className="bg-gtl-surface-light text-gtl-text border border-gtl-border rounded px-2 py-1 text-sm">
             <option>Select Template</option>
@@ -116,7 +116,7 @@ const PokemonListings: React.FC<PokemonListingsProps> = ({
       </div>
 
       {/* Table */}
-      <div className="bg-gtl-surface rounded-lg overflow-hidden border border-gtl-border">
+      <div className="bg-gtl-surface rounded-lg overflow-hidden border border-gtl-border select-none">
         <table className="w-full">
           <thead>
             <tr className="bg-gtl-header text-gtl-text">
@@ -241,12 +241,12 @@ const PokemonListings: React.FC<PokemonListingsProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="mt-2 text-center text-gtl-text-dim">
+      <div className="mt-2 text-center text-gtl-text-dim select-none">
         <p className="text-sm">Showing {startIndex + 1} to {Math.min(endIndex, listings.length)} of {TOTAL_LISTINGS.toLocaleString()} listings.</p>
       </div>
 
       {/* Pagination */}
-      <div className="mt-2 flex justify-center">
+      <div className="mt-2 flex justify-center select-none">
         <div className="flex items-center gap-1">
           <button 
             onClick={() => handlePageChange(1)}

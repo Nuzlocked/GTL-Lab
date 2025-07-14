@@ -300,23 +300,8 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
   const generateListings = useCallback(() => {
     if (!rng) return;
 
-    // Remove expired shiny snipes
-    if (gameActive) {
-      const currentTime = Date.now();
-      const expiredListingIds: string[] = [];
-
-      activeShinySnipes.forEach((snipe, listingId) => {
-        const elapsed = currentTime - snipe.appearTime;
-        if (elapsed > match.game_settings.snipeWindow) {
-          expiredListingIds.push(listingId);
-        }
-      });
-
-      if (expiredListingIds.length > 0) {
-        setListings(prev => prev.filter(listing => !expiredListingIds.includes(listing.id)));
-        setVisibleListings(prev => prev.filter(listing => !expiredListingIds.includes(listing.id)));
-      }
-    }
+    // NOTE: Expired shiny snipes are NOT automatically removed here - they only
+    // disappear when the user manually refreshes or attempts to purchase them.
 
     // Generate new listings using seeded RNG
     const random = rng.random();
@@ -474,8 +459,8 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
   if (showCountdown) {
     return (
       <div className="h-screen pt-20 flex items-center justify-center px-3">
-        <div className="max-w-6xl w-full relative border-4 border-gray-600 rounded-lg overflow-hidden">
-          <div className="absolute inset-0 bg-black bg-opacity-25 backdrop-blur-sm flex items-center justify-center z-50 rounded-lg">
+        <div className="max-w-6xl w-full relative border-4 border-gray-600 rounded-lg overflow-hidden select-none">
+          <div className="absolute inset-0 bg-black bg-opacity-25 backdrop-blur-sm flex items-center justify-center z-50 rounded-lg select-none">
             <div className="text-center text-white">
               <div className="text-6xl font-bold animate-pulse">
                 {countdown > 0 ? countdown : 'GO!'}
@@ -550,7 +535,7 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
 
   return (
     <div className="h-screen pt-20 flex flex-col items-center justify-center px-3 gap-4">
-      <div className="max-w-6xl w-full rounded-2xl bg-gtl-surface-glass backdrop-blur-xl border border-white/20 shadow-2xl p-2">
+      <div className="max-w-6xl w-full rounded-2xl bg-gtl-surface-glass backdrop-blur-xl border border-white/20 shadow-2xl p-2 select-none">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="bg-red-600 text-white font-bold py-1 px-2 rounded text-sm">
@@ -582,7 +567,7 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
         </div>
       </div>
       
-      <div className="max-w-6xl w-full border-4 border-gray-600 rounded-lg overflow-hidden">
+      <div className="max-w-6xl w-full border-4 border-gray-600 rounded-lg overflow-hidden select-none">
         <div className="bg-gtl-header rounded-t-lg p-2 border-b border-gtl-border">
           <div className="flex items-center justify-between">
             <h1 className="text-sm font-bold text-gtl-text">Global Trade Link - Multiplayer</h1>

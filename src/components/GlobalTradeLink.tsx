@@ -245,30 +245,8 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
     // function is executed automatically every second and should not visibly
     // disturb the user interface.
     
-    // Remove expired shiny snipes from listings if game is active
-    if (gameActive) {
-      const currentTime = Date.now();
-      const expiredListingIds: string[] = [];
-      
-      activeShinySnipes.forEach((snipe, listingId) => {
-        const elapsed = currentTime - snipe.appearTime;
-        if (elapsed > gameSettings.snipeWindow) {
-          expiredListingIds.push(listingId);
-        }
-      });
-      
-      if (expiredListingIds.length > 0) {
-        // Remove expired listings
-        setListings(prev => prev.filter(listing => !expiredListingIds.includes(listing.id)));
-        
-        // Remove from active snipes tracking
-        setActiveShinySnipes(prev => {
-          const newMap = new Map(prev);
-          expiredListingIds.forEach(id => newMap.delete(id));
-          return newMap;
-        });
-      }
-    }
+    // NOTE: Expired shiny snipes are NOT automatically removed here - they only
+    // disappear when the user manually refreshes or attempts to purchase them.
     
     // Generate random number between 0 and 1
     const random = Math.random();
@@ -457,9 +435,9 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
   if (showCountdown) {
     return (
       <div className="h-screen pt-20 flex items-center justify-center px-3">
-        <div className="max-w-6xl w-full relative border-4 border-gray-600 rounded-lg overflow-hidden">
+        <div className="max-w-6xl w-full relative border-4 border-gray-600 rounded-lg overflow-hidden select-none">
           {/* Countdown Overlay */}
-          <div className="absolute inset-0 bg-black bg-opacity-25 backdrop-blur-sm flex items-center justify-center z-50 rounded-lg">
+          <div className="absolute inset-0 bg-black bg-opacity-25 backdrop-blur-sm flex items-center justify-center z-50 rounded-lg select-none">
             <div className="text-center text-white">
               <div className="text-8xl font-bold animate-pulse">
                 {countdown > 0 ? countdown : 'GO!'}
@@ -551,7 +529,7 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
   return (
     <div className="h-screen pt-20 flex flex-col items-center justify-center px-3 gap-4">
       {/* Game Control Panel */}
-      <div className="max-w-6xl w-full rounded-2xl bg-gtl-surface-glass backdrop-blur-xl border border-white/20 shadow-2xl p-2">
+      <div className="max-w-6xl w-full rounded-2xl bg-gtl-surface-glass backdrop-blur-xl border border-white/20 shadow-2xl p-2 select-none">
         <div className="flex items-center justify-between">
           <>
             <div className="flex items-center gap-2">
@@ -582,7 +560,7 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
         </div>
       </div>
 
-      <div className="max-w-6xl w-full border-4 border-gray-600 rounded-lg overflow-hidden">
+      <div className="max-w-6xl w-full border-4 border-gray-600 rounded-lg overflow-hidden select-none">
         {/* Header */}
         <div className="bg-gtl-header rounded-t-lg p-2 border-b border-gtl-border">
           <div className="flex items-center justify-between">
