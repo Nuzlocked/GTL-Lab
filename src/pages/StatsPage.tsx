@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
@@ -20,35 +20,65 @@ const StatsPage: React.FC = () => {
   });
   const [fetching, setFetching] = useState(true);
 
-  useEffect(() => {
-    const fetchBests = async () => {
-      if (!user) {
-        setFetching(false);
-        return;
-      }
-      const { data, error } = await supabase
-        .from('personal_bests')
-        .select('*')
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Error fetching personal bests', error);
-      }
-
-      const map: Record<string, PersonalBestRow | null> = { ...bests };
-      if (data) {
-        data.forEach((row: any) => {
-          map[row.category] = row as PersonalBestRow;
-        });
-      }
-      setBests(map);
+  const fetchBests = useCallback(async () => {
+    if (!user) {
       setFetching(false);
-    };
+      return;
+    }
+    
+    setFetching(true);
+    const { data, error } = await supabase
+      .from('personal_bests')
+      .select('*')
+      .eq('user_id', user.id);
 
+    if (error) {
+      console.error('Error fetching personal bests', error);
+    }
+
+    const map: Record<string, PersonalBestRow | null> = {
+      'Normal': null,
+      'Busy': null,
+      'Dump': null,
+    };
+    
+    if (data) {
+      data.forEach((row: any) => {
+        map[row.category] = row as PersonalBestRow;
+      });
+    }
+    setBests(map);
+    setFetching(false);
+  }, [user]);
+
+  useEffect(() => {
     if (!loading) {
       fetchBests();
     }
-  }, [loading, user]);
+  }, [loading, fetchBests]);
+
+  // Refetch data when the page becomes visible/focused
+  useEffect(() => {
+    const handleFocus = () => {
+      if (user && !loading) {
+        fetchBests();
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && user && !loading) {
+        fetchBests();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user, loading, fetchBests]);
 
   if (loading || fetching) {
     return <div className="h-screen flex items-center justify-center">Loading...</div>;

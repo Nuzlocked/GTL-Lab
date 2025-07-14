@@ -191,11 +191,10 @@ const PokemonListings: React.FC<PokemonListingsProps> = ({
                             e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjNDQ0IiByeD0iNCIvPgo8dGV4dCB4PSIyMCIgeT0iMjQiIGZpbGw9IiM5OTkiIGZvbnQtZmtaW1pWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Pz88L3RleHQ+Cjwvc3ZnPgo=';
                           }}
                         />
-                        <div className={`absolute top-0 left-0 w-3 h-3 ${listing.pokemon.gender === 'male' ? 'bg-blue-400' : 'bg-pink-400'}`}>
+                        <div className={`absolute top-0 left-0 w-4 h-4 ${listing.pokemon.gender === 'male' ? 'bg-blue-400' : 'bg-pink-400'}`}>
                         </div>
                         {listing.pokemon.isShiny && (
-                          <div className="absolute -top-0.5 -right-0.5 text-yellow-400 text-lg">
-                            ⭐
+                          <div className="absolute top-0 right-0 w-4 h-4 bg-yellow-400">
                           </div>
                         )}
                       </div>
