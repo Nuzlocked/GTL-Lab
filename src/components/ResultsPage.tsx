@@ -35,11 +35,11 @@ const ResultsPage: React.FC<ResultsPageProps> = ({
   };
 
   const getPerformanceGrade = () => {
-    const successRate = getSuccessRate();
-    if (successRate >= 80) return { grade: 'S', color: 'text-yellow-400', description: 'Outstanding!' };
-    if (successRate >= 60) return { grade: 'A', color: 'text-green-400', description: 'Excellent!' };
-    if (successRate >= 40) return { grade: 'B', color: 'text-blue-400', description: 'Good!' };
-    if (successRate >= 20) return { grade: 'C', color: 'text-orange-400', description: 'Not bad!' };
+    const shinySnipeRate = gameStats.totalShiniesAppeared === 0 ? 0 : (gameStats.shinySnipesCaught / gameStats.totalShiniesAppeared) * 100;
+    if (shinySnipeRate >= 80) return { grade: 'S', color: 'text-yellow-400', description: 'Outstanding!' };
+    if (shinySnipeRate >= 60) return { grade: 'A', color: 'text-green-400', description: 'Excellent!' };
+    if (shinySnipeRate >= 40) return { grade: 'B', color: 'text-blue-400', description: 'Good!' };
+    if (shinySnipeRate >= 20) return { grade: 'C', color: 'text-orange-400', description: 'Not bad!' };
     return { grade: 'D', color: 'text-red-400', description: 'Keep practicing!' };
   };
 
@@ -70,7 +70,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({
               {performance.description}
             </div>
             <div className="text-sm text-gtl-text-dim">
-              Success Rate: {getSuccessRate().toFixed(1)}%
+              Shiny Snipe Rate: {gameStats.totalShiniesAppeared === 0 ? 0 : ((gameStats.shinySnipesCaught / gameStats.totalShiniesAppeared) * 100).toFixed(1)}%
             </div>
           </div>
 
