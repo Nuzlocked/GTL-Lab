@@ -47,6 +47,7 @@ export interface GameStats {
   totalShiniesAppeared: number;
   totalReactionTime: number;
   reactionTimes: number[];
+  totalAttempts: number;
 }
 
 class FriendlyService {

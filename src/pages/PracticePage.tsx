@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import SettingsPage from '../components/SettingsPage';
 import GlobalTradeLink from '../components/GlobalTradeLink';
 import ResultsPage from '../components/ResultsPage';
-import { GameSettings, DEFAULT_SETTINGS } from '../types/GameSettings';
+import { GameSettings, DEFAULT_SETTINGS, GAME_PRESETS } from '../types/GameSettings';
+import { useAuth } from '../contexts/AuthContext';
+import { recordPersonalBest } from '../services/personalBestService';
 
 type PracticePageState = 'settings' | 'game' | 'results';
 
@@ -11,6 +13,7 @@ interface GameStats {
   totalShiniesAppeared: number;
   totalReactionTime: number;
   reactionTimes: number[];
+  totalAttempts: number;
 }
 
 const PracticePage: React.FC = () => {
@@ -20,16 +23,31 @@ const PracticePage: React.FC = () => {
     shinySnipesCaught: 0,
     totalShiniesAppeared: 0,
     totalReactionTime: 0,
-    reactionTimes: []
+    reactionTimes: [],
+    totalAttempts: 0,
   });
+  const [isNewBest, setIsNewBest] = useState(false);
 
   const handleStartGame = (settings: GameSettings) => {
     setGameSettings(settings);
     setPageState('game');
   };
 
-  const handleGameComplete = (stats: GameStats) => {
+  const handleGameComplete = async (stats: GameStats) => {
     setGameStats(stats);
+
+    let newBestFlag = false;
+    const category = getCategoryName(gameSettings);
+
+    if (category && user) {
+      try {
+        newBestFlag = await recordPersonalBest(user.id, category, stats);
+      } catch (error) {
+        console.error('Error recording personal best', error);
+      }
+    }
+
+    setIsNewBest(newBestFlag);
     setPageState('results');
   };
 
@@ -43,6 +61,15 @@ const PracticePage: React.FC = () => {
 
   const handleCancel = () => {
     setPageState('settings');
+  };
+
+  const { user } = useAuth();
+
+  const getCategoryName = (settings: GameSettings): string | null => {
+    // Determine category by matching to preset settings
+    const match = GAME_PRESETS.find(p => JSON.stringify(p.settings) === JSON.stringify(settings));
+    if (!match) return null;
+    return match.name === 'Normal Day' ? 'Normal' : match.name;
   };
 
   if (pageState === 'settings') {
@@ -66,6 +93,7 @@ const PracticePage: React.FC = () => {
             gameSettings={gameSettings}
             onPlayAgain={handlePlayAgain}
             onBackToSettings={handleBackToSettings}
+            isNewPersonalBest={isNewBest}
         />
     )
   }

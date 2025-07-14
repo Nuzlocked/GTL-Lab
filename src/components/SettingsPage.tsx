@@ -32,7 +32,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onStartGame }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen pt-24 flex items-center justify-center p-4">
       <div className="max-w-lg w-full rounded-2xl bg-gtl-surface-glass backdrop-blur-xl border border-white/20 shadow-2xl">
         {/* Header */}
         <div className="bg-transparent p-4">
@@ -81,24 +81,24 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onStartGame }) => {
                 {/* Shiny Frequency Setting */}
                 <div>
                   <label className="block text-gtl-text text-lg font-medium mb-3">
-                    ⭐ Shiny Frequency: {settings.shinyFrequency}%
+                    ⭐ Shiny Count: {settings.shinyFrequency} shinies
                   </label>
                   <div className="relative">
                     <input
                       type="range"
-                      min="1"
-                      max="25"
+                      min="6"
+                      max="20"
                       value={settings.shinyFrequency}
                       onChange={(e) => handleSliderChange('shinyFrequency', parseInt(e.target.value))}
                       className="w-full h-3 bg-gtl-surface-light rounded-lg appearance-none cursor-pointer slider"
                     />
                     <div className="flex justify-between text-gtl-text-dim text-sm mt-2">
-                      <span>1% (Rare)</span>
-                      <span>25% (Common)</span>
+                      <span>6 (Rare)</span>
+                      <span>20 (Abundant)</span>
                     </div>
                   </div>
                   <p className="text-gtl-text-dim text-sm mt-2">
-                    Higher percentages mean shinies appear more frequently during refreshes.
+                    Total number of shiny Pokemon that will appear during the 60-second game.
                   </p>
                 </div>
 
@@ -189,7 +189,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onStartGame }) => {
               <div className="grid grid-cols-2 gap-3 text-gtl-text text-sm">
                 <div>
                   <span className="text-gtl-text-dim">Shiny Rate:</span>
-                  <span className="ml-2 font-bold">{settings.shinyFrequency}%</span>
+                  <span className="ml-2 font-bold">{settings.shinyFrequency} shinies</span>
                 </div>
                 <div>
                   <span className="text-gtl-text-dim">Ping:</span>

@@ -6,6 +6,7 @@ interface GameStats {
   totalShiniesAppeared: number;
   totalReactionTime: number;
   reactionTimes: number[];
+  totalAttempts: number;
 }
 
 interface ResultsPageProps {
@@ -13,13 +14,15 @@ interface ResultsPageProps {
   gameSettings: GameSettings;
   onPlayAgain: () => void;
   onBackToSettings: () => void;
+  isNewPersonalBest?: boolean;
 }
 
 const ResultsPage: React.FC<ResultsPageProps> = ({ 
   gameStats, 
   gameSettings, 
   onPlayAgain, 
-  onBackToSettings 
+  onBackToSettings,
+  isNewPersonalBest = false,
 }) => {
   const getAverageReactionTime = () => {
     if (gameStats.reactionTimes.length === 0) return 0;
@@ -27,8 +30,8 @@ const ResultsPage: React.FC<ResultsPageProps> = ({
   };
 
   const getSuccessRate = () => {
-    if (gameStats.totalShiniesAppeared === 0) return 0;
-    return (gameStats.shinySnipesCaught / gameStats.totalShiniesAppeared) * 100;
+    if (gameStats.totalAttempts === 0) return 0;
+    return (gameStats.shinySnipesCaught / gameStats.totalAttempts) * 100;
   };
 
   const getPerformanceGrade = () => {
@@ -50,6 +53,9 @@ const ResultsPage: React.FC<ResultsPageProps> = ({
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gtl-text mb-1">Time's up!</h1>
             <p className="text-gtl-text-dim text-base">Here's how you performed</p>
+            {isNewPersonalBest && (
+              <p className="text-green-400 text-lg font-semibold mt-2">🎉 New Personal Best!</p>
+            )}
           </div>
         </div>
 
@@ -97,7 +103,7 @@ const ResultsPage: React.FC<ResultsPageProps> = ({
                 <div className="flex justify-between items-center bg-gtl-surface rounded p-2">
                   <span className="text-gtl-text text-sm">🎯 Total Attempts:</span>
                   <span className="text-gtl-text text-sm font-bold">
-                    {gameStats.reactionTimes.length}
+                    {gameStats.totalAttempts}
                   </span>
                 </div>
               </div>
@@ -108,14 +114,14 @@ const ResultsPage: React.FC<ResultsPageProps> = ({
               <h3 className="text-gtl-text text-lg font-bold mb-3 text-center">⚙️ Settings Used</h3>
               <div className="space-y-2">
                 <div className="flex justify-between items-center bg-gtl-surface rounded p-2">
-                  <span className="text-gtl-text text-sm">⭐ Shiny Frequency:</span>
+                  <span className="text-gtl-text text-sm">⭐ Shiny Count:</span>
                   <span className="text-gtl-text text-sm font-bold">
-                    {gameSettings.shinyFrequency}%
+                    {gameSettings.shinyFrequency} shinies
                   </span>
                 </div>
                 
                 <div className="flex justify-between items-center bg-gtl-surface rounded p-2">
-                  <span className="text-gtl-text text-sm">�� Ping Simulation:</span>
+                  <span className="text-gtl-text text-sm"> Ping Simulation:</span>
                   <span className="text-gtl-text text-sm font-bold">
                     {gameSettings.pingSimulation}ms
                   </span>

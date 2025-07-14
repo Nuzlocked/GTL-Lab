@@ -19,6 +19,7 @@ interface GameStats {
   totalShiniesAppeared: number; // total shinies that spawned during the game
   totalReactionTime: number; // in milliseconds
   reactionTimes: number[]; // array of individual reaction times
+  totalAttempts: number; // total purchase attempts (successful, missed, or false)
 }
 
 interface ShinySnipe {
@@ -57,7 +58,8 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
     shinySnipesCaught: 0,
     totalShiniesAppeared: 0,
     totalReactionTime: 0,
-    reactionTimes: []
+    reactionTimes: [],
+    totalAttempts: 0,
   });
   const [activeShinySnipes, setActiveShinySnipes] = useState<Map<string, ShinySnipe>>(new Map());
   const [shinyOnCooldown, setShinyOnCooldown] = useState(false);
@@ -67,7 +69,7 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
   const [snipeSchedule, setSnipeSchedule] = useState<number[]>([]);
   
   // Forced snipe scheduling constants (practice mode)
-  const MAX_SNIPES = 12;
+  const MAX_SNIPES = gameSettings.shinyFrequency; // Use the shiny count from settings
   const SNIPE_MIN_DELAY_MS = 2000;   // No snipe before 2s
   const SNIPE_END_BUFFER_MS = 3000;  // Buffer at end (no spawns in last 3s)
   const GAME_DURATION_MS = 60000;    // 60s game
@@ -97,8 +99,10 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
   // Initialize listings on component mount
   useEffect(() => {
     const initialListings = generateInitialListings(25); // Start with 25 listings to test pagination
-    setListings(initialListings);
-    setVisibleListings(initialListings);
+    // Filter out any shinies from initial listings to ensure no snipes are present at start
+    const nonShinyListings = initialListings.filter(listing => !listing.pokemon.isShiny);
+    setListings(nonShinyListings);
+    setVisibleListings(nonShinyListings);
   }, []);
 
   // Countdown timer effect
@@ -158,6 +162,14 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
   };
 
   const handlePurchase = (listingId: string) => {
+    // First, verify the listing still exists in the authoritative state. If it was
+    // already removed (e.g., expired snipe), treat as not found.
+    const listingStillExists = listings.some(l => l.id === listingId);
+    if (!listingStillExists) {
+      addNotification("Listing not found.", 'error');
+      handleDisplayRefresh();
+      return;
+    }
     // Check if this is an expired shiny snipe during game
     if (gameActive && activeShinySnipes.has(listingId)) {
       const snipe = activeShinySnipes.get(listingId)!;
@@ -172,15 +184,19 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
           shinySnipesCaught: prev.shinySnipesCaught, // Don't increment caught count
           totalShiniesAppeared: prev.totalShiniesAppeared, // Keep count the same
           totalReactionTime: prev.totalReactionTime + reactionTime,
-          reactionTimes: [...prev.reactionTimes, reactionTime]
+          reactionTimes: [...prev.reactionTimes, reactionTime],
+          totalAttempts: prev.totalAttempts + 1,
         }));
         
-        // Remove from active snipes tracking
+        // Remove from active snipes tracking AND from listings
         setActiveShinySnipes(prev => {
           const newMap = new Map(prev);
           newMap.delete(listingId);
           return newMap;
         });
+        
+        // Remove the expired snipe from listings
+        setListings(prev => prev.filter(listing => listing.id !== listingId));
         
         addNotification("Listing not found.", 'error');
         handleDisplayRefresh(); // Reveal current state on failed purchase
@@ -195,7 +211,8 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
         shinySnipesCaught: prev.shinySnipesCaught + 1,
         totalShiniesAppeared: prev.totalShiniesAppeared, // Keep count the same
         totalReactionTime: prev.totalReactionTime + reactionTime,
-        reactionTimes: [...prev.reactionTimes, reactionTime]
+        reactionTimes: [...prev.reactionTimes, reactionTime],
+        totalAttempts: prev.totalAttempts + 1,
       }));
       
       // Remove from active snipes
@@ -204,6 +221,14 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
         newMap.delete(listingId);
         return newMap;
       });
+    }
+
+    // This was NOT an active shiny snipe, so count it as an attempt without success when game is active
+    if (gameActive && !activeShinySnipes.has(listingId)) {
+      setGameStats(prev => ({
+        ...prev,
+        totalAttempts: prev.totalAttempts + 1,
+      }));
     }
 
     // Remove listing from both authoritative and visible states, then show success
@@ -281,7 +306,7 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
         const canSpawnShiny = false;
         
         for (let i = 0; i < newListingsCount; i++) {
-          newListings.push(generateRandomListing(gameActive, canSpawnShiny, gameSettings.shinyFrequency));
+          newListings.push(generateRandomListing(gameActive, canSpawnShiny, 0)); // Set to 0 since we use scheduled shinies
         }
         
         // If game is active, track new shiny snipes and update cooldown
@@ -363,8 +388,39 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
     setIsRefreshing(true);
 
     setTimeout(() => {
-      // Expose the latest authoritative listings to the user
-      setVisibleListings(listings);
+      // Filter out any expired snipes before showing to user
+      let filteredListings = listings;
+      
+      if (gameActive) {
+        const currentTime = Date.now();
+        const expiredListingIds: string[] = [];
+        
+        // Check for expired snipes
+        activeShinySnipes.forEach((snipe, listingId) => {
+          const elapsed = currentTime - snipe.appearTime;
+          if (elapsed > gameSettings.snipeWindow) {
+            expiredListingIds.push(listingId);
+          }
+        });
+        
+        // Remove expired snipes from what we show and from authoritative state
+        if (expiredListingIds.length > 0) {
+          filteredListings = listings.filter(listing => !expiredListingIds.includes(listing.id));
+          
+          // Also update the authoritative listings state
+          setListings(filteredListings);
+          
+          // Remove from active snipes tracking
+          setActiveShinySnipes(prev => {
+            const newMap = new Map(prev);
+            expiredListingIds.forEach(id => newMap.delete(id));
+            return newMap;
+          });
+        }
+      }
+      
+      // Expose the filtered listings to the user
+      setVisibleListings(filteredListings);
       setIsRefreshing(false);
     }, gameSettings.pingSimulation);
   };
@@ -458,9 +514,9 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
           <div className="bg-gtl-surface rounded-b-lg">
             {activeTab === 'pokemon' && (
               <PokemonListings 
-                listings={visibleListings} 
+                listings={visibleListings}
                 onPurchase={handlePurchase} 
-                onRefresh={handleDisplayRefresh} 
+                onRefresh={handleDisplayRefresh}
                 isRefreshing={isRefreshing}
                 gameActive={gameActive}
                 activeShinySnipes={activeShinySnipes}
@@ -506,7 +562,7 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
                 ⭐ Snipes: {gameStats.shinySnipesCaught}
               </div>
               <div className="bg-purple-600 text-white font-bold py-1 px-2 rounded text-sm">
-                🎯 Attempts: {gameStats.reactionTimes.length}
+                🎯 Attempts: {gameStats.totalAttempts}
               </div>
               <button 
                 onClick={onCancel}
@@ -518,11 +574,14 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
             
             <div className="text-gtl-text text-sm">
               <p className="font-semibold">🎯 Snipe Pokémon within {(gameSettings.snipeWindow / 1000).toFixed(1)}s!</p>
-              <p className="text-xs text-gtl-text-dim">Settings: {gameSettings.shinyFrequency}% shiny rate • {gameSettings.pingSimulation}ms ping • {gameSettings.gtlActivity} max/refresh • {(gameSettings.snipeWindow / 1000).toFixed(1)}s window</p>
+              <p className="text-xs text-gtl-text-dim">
+                Settings: {gameSettings.shinyFrequency}% shiny rate • {gameSettings.pingSimulation}ms ping • {gameSettings.gtlActivity} max/refresh • {(gameSettings.snipeWindow / 1000).toFixed(1)}s window
+              </p>
             </div>
           </>
         </div>
       </div>
+
       <div className="max-w-6xl w-full border-4 border-gray-600 rounded-lg overflow-hidden">
         {/* Header */}
         <div className="bg-gtl-header rounded-t-lg p-2 border-b border-gtl-border">
@@ -532,10 +591,6 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
           </div>
         </div>
 
-        {/* Game Control Panel is now above */}
-        
-
-          <>
         {/* Navigation Tabs */}
         <div className="bg-gtl-surface border-b border-gtl-border">
           <div className="flex">
@@ -559,9 +614,9 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
         <div className="bg-gtl-surface rounded-b-lg">
           {activeTab === 'pokemon' && (
             <PokemonListings 
-              listings={visibleListings} 
+              listings={visibleListings}
               onPurchase={handlePurchase} 
-              onRefresh={handleDisplayRefresh} 
+              onRefresh={handleDisplayRefresh}
               isRefreshing={isRefreshing}
               gameActive={gameActive}
               activeShinySnipes={activeShinySnipes}
@@ -576,8 +631,6 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
             </div>
           )}
         </div>
-          </>
-
       </div>
 
       {/* Notification System */}
@@ -585,7 +638,7 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
         {notifications.map((notification) => (
           <div
             key={notification.id}
-            className={`mb-2 px-3 py-2 rounded-lg text-white font-medium text-sm shadow-lg animate-fade-in bg-gtl-uniform-bg`}
+            className="mb-2 px-3 py-2 rounded-lg text-white font-medium text-sm shadow-lg animate-fade-in bg-gtl-uniform-bg"
           >
             {notification.message}
           </div>

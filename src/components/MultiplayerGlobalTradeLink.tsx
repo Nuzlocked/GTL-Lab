@@ -55,7 +55,8 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
     shinySnipesCaught: 0,
     totalShiniesAppeared: 0,
     totalReactionTime: 0,
-    reactionTimes: []
+    reactionTimes: [],
+    totalAttempts: 0,
   });
   const [activeShinySnipes, setActiveShinySnipes] = useState<Map<string, ShinySnipe>>(new Map());
   const [shinyOnCooldown, setShinyOnCooldown] = useState(false);
@@ -66,8 +67,38 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
   const [waitingForOpponent, setWaitingForOpponent] = useState(false);
   const [matchStatus, setMatchStatus] = useState(match.match_status);
   
+  // Shiny scheduling state (similar to practice mode)
+  const [snipesSpawned, setSnipesSpawned] = useState(0);
+  const [gameStartTime, setGameStartTime] = useState<number | null>(null);
+  const [snipeSchedule, setSnipeSchedule] = useState<number[]>([]);
+  
   // Notification state
   const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  // Shiny scheduling constants
+  const MAX_SNIPES = match.game_settings.shinyFrequency; // Use the shiny count from settings
+  const SNIPE_MIN_DELAY_MS = 2000;   // No snipe before 2s
+  const SNIPE_END_BUFFER_MS = 3000;  // Buffer at end (no spawns in last 3s)
+  const GAME_DURATION_MS = 60000;    // 60s game
+  const SNIPE_MIN_GAP_MS = 3000;     // At least 3s between snipes
+
+  // Utility to create a pseudo-random schedule using seeded RNG
+  const createSnipeSchedule = (seededRng: SeededRNG): number[] => {
+    const schedule: number[] = [];
+    const startWindow = SNIPE_MIN_DELAY_MS;
+    const endWindow = GAME_DURATION_MS - SNIPE_END_BUFFER_MS;
+
+    for (let i = 0; i < MAX_SNIPES; i++) {
+      const remaining = MAX_SNIPES - i - 1;
+      const earliest = i === 0 ? startWindow : schedule[i - 1] + SNIPE_MIN_GAP_MS;
+      const latest = endWindow - remaining * SNIPE_MIN_GAP_MS;
+      // Random time between earliest and latest using seeded RNG
+      const randomOffset = seededRng.random();
+      const nextTime = Math.floor(earliest + randomOffset * (latest - earliest));
+      schedule.push(nextTime);
+    }
+    return schedule;
+  };
 
   // Initialize RNG and opponent info
   useEffect(() => {
@@ -80,8 +111,10 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
     
     // Initialize listings with seeded RNG
     const initialListings = generateInitialListingsSeeded(25, seededRng);
-    setListings(initialListings);
-    setVisibleListings(initialListings);
+    // Filter out any shinies from initial listings to ensure no snipes are present at start
+    const nonShinyListings = initialListings.filter(listing => !listing.pokemon.isShiny);
+    setListings(nonShinyListings);
+    setVisibleListings(nonShinyListings);
     
     // No longer immediately update match status; we'll set it once countdown finishes
   }, [match, user]);
@@ -144,6 +177,11 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
     } else if (showCountdown && countdown === 0) {
       setShowCountdown(false);
       setGameActive(true);
+      setGameStartTime(Date.now());
+      setSnipesSpawned(0);
+      if (rng) {
+        setSnipeSchedule(createSnipeSchedule(rng));
+      }
     }
   }, [countdown, showCountdown, areSpritesLoaded, rng]);
 
@@ -207,14 +245,19 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
           shinySnipesCaught: prev.shinySnipesCaught,
           totalShiniesAppeared: prev.totalShiniesAppeared,
           totalReactionTime: prev.totalReactionTime + reactionTime,
-          reactionTimes: [...prev.reactionTimes, reactionTime]
+          reactionTimes: [...prev.reactionTimes, reactionTime],
+          totalAttempts: prev.totalAttempts + 1,
         }));
         
+        // Remove from active snipes tracking AND from listings
         setActiveShinySnipes(prev => {
           const newMap = new Map(prev);
           newMap.delete(listingId);
           return newMap;
         });
+        
+        // Remove the expired snipe from listings
+        setListings(prev => prev.filter(listing => listing.id !== listingId));
         
         addNotification("Listing not found.", 'error');
         handleDisplayRefresh();
@@ -227,7 +270,8 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
         shinySnipesCaught: prev.shinySnipesCaught + 1,
         totalShiniesAppeared: prev.totalShiniesAppeared,
         totalReactionTime: prev.totalReactionTime + reactionTime,
-        reactionTimes: [...prev.reactionTimes, reactionTime]
+        reactionTimes: [...prev.reactionTimes, reactionTime],
+        totalAttempts: prev.totalAttempts + 1,
       }));
       
       setActiveShinySnipes(prev => {
@@ -235,6 +279,14 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
         newMap.delete(listingId);
         return newMap;
       });
+    }
+
+    // This was NOT an active shiny snipe, so count it as an attempt without success when game is active
+    if (gameActive && !activeShinySnipes.has(listingId)) {
+      setGameStats(prev => ({
+        ...prev,
+        totalAttempts: prev.totalAttempts + 1,
+      }));
     }
 
     setListings(prev => prev.filter(listing => listing.id !== listingId));
@@ -287,40 +339,52 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
 
       if (newListingsCount > 0) {
         const newListings: PokemonListing[] = [];
-        const canSpawnShiny = gameActive ? !shinyOnCooldown : true;
+        // Disable random shiny spawns - we'll use scheduled shinies instead
+        const canSpawnShiny = false;
 
         for (let i = 0; i < newListingsCount; i++) {
-          newListings.push(generateRandomListingSeeded(rng, gameActive, canSpawnShiny, match.game_settings.shinyFrequency));
+          newListings.push(generateRandomListingSeeded(rng, gameActive, canSpawnShiny, 0)); // Set to 0 since we use scheduled shinies
         }
 
-        if (gameActive) {
-          let shinySpawned = false;
-
-          newListings.forEach(listing => {
-            if (listing.pokemon.isShiny) {
-              shinySpawned = true;
-              const appearTime = Date.now();
-              setActiveShinySnipes(prev => {
-                const newMap = new Map(prev);
-                newMap.set(listing.id, { listingId: listing.id, appearTime });
-                return newMap;
-              });
-              setGameStats(prev => ({
-                ...prev,
-                totalShiniesAppeared: prev.totalShiniesAppeared + 1,
-              }));
-            }
-          });
-
-          if (shinySpawned) {
-            setShinyOnCooldown(true);
-          }
-        }
-
+        // Random shiny generation is now disabled - we use scheduled shinies instead
         setListings(prev => [...newListings, ...prev]);
       }
     }, match.game_settings.pingSimulation);
-  }, [rng, gameActive, activeShinySnipes, shinyOnCooldown, match.game_settings]);
+
+    // -------------------------------------------
+    // Guaranteed snipe spawn logic (using seeded RNG for fairness)
+    // -------------------------------------------
+    if (gameActive &&
+        gameStartTime !== null &&
+        snipesSpawned < MAX_SNIPES &&
+        snipeSchedule.length === MAX_SNIPES) {
+      const elapsedMs = Date.now() - gameStartTime;
+      const nextThresholdMs = snipeSchedule[snipesSpawned];
+
+      if (elapsedMs >= nextThresholdMs) {
+        // Force-generate a shiny listing using seeded RNG
+        const snipeListing = generateRandomListingSeeded(rng, true, true, 100);
+
+        // Track shiny snipe for reaction window
+        const appearTime = Date.now();
+        setActiveShinySnipes(prev => {
+          const newMap = new Map(prev);
+          newMap.set(snipeListing.id, { listingId: snipeListing.id, appearTime });
+          return newMap;
+        });
+
+        // Update stats
+        setGameStats(prev => ({
+          ...prev,
+          totalShiniesAppeared: prev.totalShiniesAppeared + 1,
+        }));
+
+        // Add to listings and increment counter
+        setListings(prev => [snipeListing, ...prev]);
+        setSnipesSpawned(prev => prev + 1);
+      }
+    }
+  }, [rng, gameActive, activeShinySnipes, shinyOnCooldown, match.game_settings, gameStartTime, snipesSpawned, snipeSchedule, MAX_SNIPES]);
 
   // ---------------------------------------
   // Manual refresh – reveal current GTL state
@@ -328,7 +392,39 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
   const handleDisplayRefresh = () => {
     setIsRefreshing(true);
     setTimeout(() => {
-      setVisibleListings(listings);
+      // Filter out any expired snipes before showing to user
+      let filteredListings = listings;
+      
+      if (gameActive) {
+        const currentTime = Date.now();
+        const expiredListingIds: string[] = [];
+        
+        // Check for expired snipes
+        activeShinySnipes.forEach((snipe, listingId) => {
+          const elapsed = currentTime - snipe.appearTime;
+          if (elapsed > match.game_settings.snipeWindow) {
+            expiredListingIds.push(listingId);
+          }
+        });
+        
+        // Remove expired snipes from what we show and from authoritative state
+        if (expiredListingIds.length > 0) {
+          filteredListings = listings.filter(listing => !expiredListingIds.includes(listing.id));
+          
+          // Also update the authoritative listings state
+          setListings(filteredListings);
+          
+          // Remove from active snipes tracking
+          setActiveShinySnipes(prev => {
+            const newMap = new Map(prev);
+            expiredListingIds.forEach(id => newMap.delete(id));
+            return newMap;
+          });
+        }
+      }
+      
+      // Expose the filtered listings to the user
+      setVisibleListings(filteredListings);
       setIsRefreshing(false);
     }, match.game_settings.pingSimulation);
   };

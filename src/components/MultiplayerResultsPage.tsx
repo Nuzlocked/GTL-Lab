@@ -63,8 +63,8 @@ const MultiplayerResultsPage: React.FC<MultiplayerResultsPageProps> = ({
   }, [opponentStats, match.id, isPlayer1, myStats]);
 
   const calculateScore = (stats: GameStats, settings: GameSettings): number => {
-    const successRate = stats.totalShiniesAppeared > 0 ? 
-      (stats.shinySnipesCaught / stats.totalShiniesAppeared) * 100 : 0;
+    const successRate = stats.totalAttempts > 0 ? 
+      (stats.shinySnipesCaught / stats.totalAttempts) * 100 : 0;
     
     const avgReactionTime = stats.reactionTimes.length > 0 ? 
       stats.totalReactionTime / stats.reactionTimes.length : 0;
@@ -75,8 +75,8 @@ const MultiplayerResultsPage: React.FC<MultiplayerResultsPageProps> = ({
   };
 
   const getPerformanceGrade = (stats: GameStats) => {
-    const successRate = stats.totalShiniesAppeared > 0 ? 
-      (stats.shinySnipesCaught / stats.totalShiniesAppeared) * 100 : 0;
+    const successRate = stats.totalAttempts > 0 ? 
+      (stats.shinySnipesCaught / stats.totalAttempts) * 100 : 0;
     
     if (successRate >= 80) return { grade: 'S', color: 'text-yellow-400', description: 'Outstanding!' };
     if (successRate >= 60) return { grade: 'A', color: 'text-green-400', description: 'Excellent!' };
@@ -91,8 +91,8 @@ const MultiplayerResultsPage: React.FC<MultiplayerResultsPageProps> = ({
   };
 
   const getSuccessRate = (stats: GameStats) => {
-    if (stats.totalShiniesAppeared === 0) return 0;
-    return (stats.shinySnipesCaught / stats.totalShiniesAppeared) * 100;
+    if (stats.totalAttempts === 0) return 0;
+    return (stats.shinySnipesCaught / stats.totalAttempts) * 100;
   };
 
   const myPerformance = getPerformanceGrade(myStats);
@@ -174,7 +174,7 @@ const MultiplayerResultsPage: React.FC<MultiplayerResultsPageProps> = ({
                 <div className="flex justify-between items-center bg-gtl-surface rounded p-2">
                   <span className="text-gtl-text text-sm">🎯 Total Attempts:</span>
                   <span className="text-gtl-text text-sm font-bold">
-                    {myStats.reactionTimes.length}
+                    {myStats.totalAttempts}
                   </span>
                 </div>
               </div>
@@ -225,7 +225,7 @@ const MultiplayerResultsPage: React.FC<MultiplayerResultsPageProps> = ({
                 <div className="flex justify-between items-center bg-gtl-surface rounded p-2">
                   <span className="text-gtl-text text-sm">🎯 Total Attempts:</span>
                   <span className="text-gtl-text text-sm font-bold">
-                    {opponentStats.reactionTimes.length}
+                    {opponentStats.totalAttempts}
                   </span>
                 </div>
               </div>
@@ -237,9 +237,9 @@ const MultiplayerResultsPage: React.FC<MultiplayerResultsPageProps> = ({
             <h3 className="text-gtl-text text-lg font-bold mb-3 text-center">⚙️ Match Settings</h3>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="bg-gtl-surface rounded p-2 text-center">
-                <div className="text-gtl-text text-xs">Shiny Frequency</div>
+                <div className="text-gtl-text text-xs">Shiny Count</div>
                 <div className="text-gtl-text text-sm font-bold">
-                  {match.game_settings.shinyFrequency}%
+                  {match.game_settings.shinyFrequency} shinies
                 </div>
               </div>
               
