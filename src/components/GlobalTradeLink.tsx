@@ -435,7 +435,7 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
   if (showCountdown) {
     return (
       <div className="h-screen pt-20 flex items-center justify-center px-3">
-        <div className="max-w-6xl w-full relative border-4 border-gray-600 rounded-lg overflow-hidden select-none">
+        <div className="w-[900px] h-[605px] relative border-4 border-gray-600 rounded-lg overflow-hidden select-none">
           {/* Countdown Overlay */}
           <div className="absolute inset-0 bg-black bg-opacity-25 backdrop-blur-sm flex items-center justify-center z-50 rounded-lg select-none">
             <div className="text-center text-white">
@@ -457,7 +457,7 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
           </div>
 
           {/* Header */}
-          <div className="bg-gtl-header rounded-t-lg p-2 border-b border-gtl-border">
+          <div className="bg-gtl-header rounded-t-lg px-[10px] py-[5px] border-b border-gtl-border h-[30px]">
             <div className="flex items-center justify-between">
               <h1 className="text-sm font-bold text-gtl-text">Global Trade Link</h1>
               <button className="text-gtl-text hover:text-white text-sm">×</button>
@@ -470,13 +470,13 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
           </div>
 
           {/* Navigation Tabs */}
-          <div className="bg-gtl-surface border-b border-gtl-border">
-            <div className="flex">
+          <div className="bg-gtl-surface border-b border-gtl-border h-[24px]">
+            <div className="flex h-full">
               {TABS.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-2 py-1 text-sm font-medium border-r border-gtl-border ${
+                  className={`px-[8px] flex items-center justify-center text-sm font-medium border-r border-gtl-border min-w-[100px] h-full ${
                     activeTab === tab.id
                       ? 'bg-gtl-primary text-white'
                       : 'bg-gtl-surface-light text-gtl-text hover:bg-gtl-primary hover:text-white'
@@ -489,7 +489,7 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
           </div>
 
           {/* Content Area */}
-          <div className="bg-gtl-surface rounded-b-lg">
+          <div className="bg-gtl-surface rounded-b-lg h-[525px] px-[5px] pt-[10px] pb-[10px]">
             {activeTab === 'pokemon' && (
               <PokemonListings 
                 listings={visibleListings}
@@ -529,7 +529,7 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
   return (
     <div className="h-screen pt-20 flex flex-col items-center justify-center px-3 gap-4">
       {/* Game Control Panel */}
-      <div className="max-w-6xl w-full rounded-2xl bg-gtl-surface-glass backdrop-blur-xl border border-white/20 shadow-2xl p-2 select-none">
+      <div className="w-[900px] rounded-2xl bg-gtl-surface-glass backdrop-blur-xl border border-white/20 shadow-2xl p-2 select-none">
         <div className="flex items-center justify-between">
           <>
             <div className="flex items-center gap-2">
@@ -560,9 +560,9 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
         </div>
       </div>
 
-      <div className="max-w-6xl w-full border-4 border-gray-600 rounded-lg overflow-hidden select-none">
+      <div className="w-[900px] h-[605px] border-4 border-gray-600 rounded-lg overflow-hidden select-none">
         {/* Header */}
-        <div className="bg-gtl-header rounded-t-lg p-2 border-b border-gtl-border">
+        <div className="bg-gtl-header rounded-t-lg px-[10px] py-[5px] border-b border-gtl-border h-[30px]">
           <div className="flex items-center justify-between">
             <h1 className="text-sm font-bold text-gtl-text">Global Trade Link</h1>
             <button className="text-gtl-text hover:text-white text-sm">×</button>
@@ -570,13 +570,13 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
         </div>
 
         {/* Navigation Tabs */}
-        <div className="bg-gtl-surface border-b border-gtl-border">
-          <div className="flex">
+        <div className="bg-gtl-surface border-b border-gtl-border h-[24px]">
+          <div className="flex h-full">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-2 py-1 text-sm font-medium border-r border-gtl-border ${
+                className={`px-[8px] flex items-center justify-center text-sm font-medium border-r border-gtl-border min-w-[100px] h-full ${
                   activeTab === tab.id
                     ? 'bg-gtl-primary text-white'
                     : 'bg-gtl-surface-light text-gtl-text hover:bg-gtl-primary hover:text-white'
@@ -589,7 +589,7 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
         </div>
 
         {/* Content Area */}
-        <div className="bg-gtl-surface rounded-b-lg">
+        <div className="bg-gtl-surface rounded-b-lg h-[551px] px-[5px] pt-[10px] pb-[10px]">
           {activeTab === 'pokemon' && (
             <PokemonListings 
               listings={visibleListings}
