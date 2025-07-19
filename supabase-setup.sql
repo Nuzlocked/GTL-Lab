@@ -2,7 +2,7 @@
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 DROP FUNCTION IF EXISTS handle_new_user();
 DROP TRIGGER IF EXISTS profiles_updated_at ON profiles;
-DROP FUNCTION IF EXISTS handle_updated_at();
+-- Don't drop handle_updated_at() as it may be used by other tables
 DROP TABLE IF EXISTS profiles CASCADE;
 
 -- Drop friendly system tables if they exist
@@ -273,3 +273,90 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW
   EXECUTE FUNCTION handle_new_user(); 
+
+-- ========================================
+-- POKEMON COLLECTION SYSTEM TABLES
+-- ========================================
+
+-- Table to store user's selected sprite (current avatar)
+CREATE TABLE IF NOT EXISTS user_selected_sprite (
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  pokemon_name TEXT NOT NULL,
+  is_shiny BOOLEAN DEFAULT false NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Table to store user's unlocked sprites (for legendary/mythical Pokemon)
+CREATE TABLE IF NOT EXISTS user_sprite_unlocks (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  pokemon_name TEXT NOT NULL,
+  unlock_type TEXT DEFAULT 'achievement' NOT NULL, -- 'achievement', 'purchase', 'event', etc.
+  unlock_data JSONB DEFAULT '{}' NOT NULL, -- Additional data about how it was unlocked
+  unlocked_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  
+  -- Ensure user can't unlock the same Pokemon multiple times
+  UNIQUE(user_id, pokemon_name)
+);
+
+-- Create indexes for better performance (only if they don't exist)
+CREATE INDEX IF NOT EXISTS user_sprite_unlocks_user_id_idx ON user_sprite_unlocks(user_id);
+CREATE INDEX IF NOT EXISTS user_sprite_unlocks_pokemon_name_idx ON user_sprite_unlocks(pokemon_name);
+
+-- Enable RLS on collection tables (safe to run multiple times)
+ALTER TABLE user_selected_sprite ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_sprite_unlocks ENABLE ROW LEVEL SECURITY;
+
+-- RLS policies for user_selected_sprite (drop and recreate to handle existing)
+DROP POLICY IF EXISTS "Users can view their own selected sprite" ON user_selected_sprite;
+CREATE POLICY "Users can view their own selected sprite" ON user_selected_sprite
+  FOR SELECT USING ((select auth.uid()) = user_id);
+
+DROP POLICY IF EXISTS "Users can insert their own selected sprite" ON user_selected_sprite;
+CREATE POLICY "Users can insert their own selected sprite" ON user_selected_sprite
+  FOR INSERT WITH CHECK ((select auth.uid()) = user_id);
+
+DROP POLICY IF EXISTS "Users can update their own selected sprite" ON user_selected_sprite;
+CREATE POLICY "Users can update their own selected sprite" ON user_selected_sprite
+  FOR UPDATE USING ((select auth.uid()) = user_id);
+
+DROP POLICY IF EXISTS "Users can delete their own selected sprite" ON user_selected_sprite;
+CREATE POLICY "Users can delete their own selected sprite" ON user_selected_sprite
+  FOR DELETE USING ((select auth.uid()) = user_id);
+
+-- RLS policies for user_sprite_unlocks (drop and recreate to handle existing)
+DROP POLICY IF EXISTS "Users can view their own sprite unlocks" ON user_sprite_unlocks;
+CREATE POLICY "Users can view their own sprite unlocks" ON user_sprite_unlocks
+  FOR SELECT USING ((select auth.uid()) = user_id);
+
+DROP POLICY IF EXISTS "Users can insert their own sprite unlocks" ON user_sprite_unlocks;
+CREATE POLICY "Users can insert their own sprite unlocks" ON user_sprite_unlocks
+  FOR INSERT WITH CHECK ((select auth.uid()) = user_id);
+
+-- Trigger for user_selected_sprite updated_at (uses existing handle_updated_at function)
+DROP TRIGGER IF EXISTS user_selected_sprite_updated_at ON user_selected_sprite;
+CREATE TRIGGER user_selected_sprite_updated_at
+  BEFORE UPDATE ON user_selected_sprite
+  FOR EACH ROW
+  EXECUTE FUNCTION handle_updated_at();
+
+-- Function to initialize default sprite for new users
+CREATE OR REPLACE FUNCTION initialize_user_sprite()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Set default sprite to Pikachu (non-shiny) for new users
+  INSERT INTO public.user_selected_sprite (user_id, pokemon_name, is_shiny)
+  VALUES (NEW.id, 'pikachu', false)
+  ON CONFLICT (user_id) DO NOTHING; -- Don't overwrite if already exists
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger to initialize sprite when a new user is created
+DROP TRIGGER IF EXISTS on_user_sprite_init ON auth.users;
+CREATE TRIGGER on_user_sprite_init
+  AFTER INSERT ON auth.users
+  FOR EACH ROW
+  EXECUTE FUNCTION initialize_user_sprite(); 

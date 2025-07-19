@@ -14,6 +14,7 @@ import RankedPage from './pages/RankedPage';
 import LeaderboardsPage from './pages/LeaderboardsPage';
 import StatsPage from './pages/StatsPage';
 import UserSettingsPage from './pages/UserSettingsPage';
+import CollectionPage from './pages/CollectionPage';
 
 interface UserProfile {
   id: string;
@@ -102,6 +103,7 @@ function AppContent() {
               <Route path="/ranked" element={<RankedPage />} />
               <Route path="/leaderboards" element={<LeaderboardsPage />} />
               <Route path="/stats" element={<StatsPage />} />
+              <Route path="/collection" element={<CollectionPage />} />
               <Route path="/settings" element={<UserSettingsPage />} />
             </Routes>
           )}

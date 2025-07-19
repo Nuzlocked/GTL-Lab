@@ -62,6 +62,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ profile }) => {
     if (pathname.startsWith('/ranked')) return 'ranked';
     if (pathname.startsWith('/leaderboards')) return 'leaderboards';
     if (pathname.startsWith('/stats')) return 'stats';
+    if (pathname.startsWith('/collection')) return 'collection';
     if (pathname.startsWith('/settings')) return 'settings';
     return 'other';
   };
@@ -156,6 +157,9 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ profile }) => {
               </NavLink>
               <NavLink to="/stats" className={({ isActive }) => `text-sm font-medium transition-colors duration-200 ${isActive ? 'text-gtl-text' : 'text-gray-400 hover:text-gtl-text'}`}>
                 Stats
+              </NavLink>
+              <NavLink to="/collection" className={({ isActive }) => `text-sm font-medium transition-colors duration-200 ${isActive ? 'text-gtl-text' : 'text-gray-400 hover:text-gtl-text'}`}>
+                Collection
               </NavLink>
             </nav>
           </div>
