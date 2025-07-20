@@ -217,7 +217,7 @@ DECLARE
   username_value TEXT;
 BEGIN
   -- Extract username from user metadata, ensuring it's not null or empty
-  username_value := COALESCE(NULLIF(TRIM(NEW.raw_user_meta_data->'user_metadata'->>'username'), ''), NULL);
+  username_value := COALESCE(NULLIF(TRIM(NEW.raw_user_meta_data->>'username'), ''), NULL);
 
   -- If no username provided, use email prefix but ensure uniqueness
   IF username_value IS NULL THEN

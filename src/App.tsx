@@ -40,8 +40,9 @@ function AppContent() {
           .single();
 
         if (error && error.code === 'PGRST116') {
-          // Profile not found.
-          const username = user.email?.split('@')[0] || 'Trainer';
+          // Profile not found - get username from user metadata or fallback
+          const usernameFromMeta = user.user_metadata?.username;
+          const username = usernameFromMeta || user.email?.split('@')[0] || 'Trainer';
           const { data: newProfile, error: insertError } = await supabase
             .from('profiles')
             .insert([

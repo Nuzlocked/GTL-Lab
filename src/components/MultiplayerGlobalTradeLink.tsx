@@ -7,6 +7,9 @@ import { useSpriteLoading } from '../contexts/SpriteLoadingContext';
 import { useAuth } from '../contexts/AuthContext';
 import { friendlyService, FriendlyMatch, GameStats } from '../services/friendlyService';
 import { SeededRNG } from '../utils/seededRng';
+import UserSprite from './UserSprite';
+import { shinyService } from '../services/shinyService';
+import { supabase } from '../lib/supabase';
 
 const TABS = [
   { id: 'pokemon', label: 'Pokémon Listings' },
@@ -74,6 +77,59 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
   
   // Notification state
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  
+  // Shiny hunting state
+  const [gameShinyStatus, setGameShinyStatus] = useState<boolean>(false);
+  const [showSparkles, setShowSparkles] = useState<boolean>(false);
+
+  // Handle game start with seeded shiny roll
+  const handleGameStart = async () => {
+    setShowCountdown(false);
+    setGameActive(true);
+    setGameStartTime(Date.now());
+    setSnipesSpawned(0);
+    if (rng) {
+      setSnipeSchedule(createSnipeSchedule(rng));
+      
+      // Use seeded RNG for fair shiny rolls (both players get same result)
+      const shinyRoll = rng.random();
+      const isShiny = shinyRoll < 0.01; // 1/100 chance
+      
+      if (user) {
+        try {
+          // Get user's current selected Pokemon
+          const { data: spriteData } = await supabase
+            .from('user_selected_sprite')
+            .select('pokemon_name')
+            .eq('user_id', user.id)
+            .single();
+
+          const pokemonName = spriteData?.pokemon_name || 'pikachu';
+          
+          // Set game shiny status directly (already rolled with seed)
+          await shinyService.setGameShinyStatus(user.id, isShiny, 'friendly');
+          setGameShinyStatus(isShiny);
+
+          if (isShiny) {
+            // Unlock the shiny permanently
+            const isNewUnlock = await shinyService.unlockShiny(user.id, pokemonName);
+            
+            setShowSparkles(true);
+            // Hide sparkles after 3 seconds
+            setTimeout(() => setShowSparkles(false), 3000);
+
+            if (isNewUnlock) {
+              addNotification(`🎉 New shiny ${pokemonName} unlocked!`, 'success');
+            } else {
+              addNotification(`✨ Shiny ${pokemonName} appeared!`, 'success');
+            }
+          }
+        } catch (error) {
+          console.error('Error handling shiny encounter:', error);
+        }
+      }
+    }
+  };
 
   // Shiny scheduling constants
   const MAX_SNIPES = match.game_settings.shinyFrequency; // Use the shiny count from settings
@@ -175,13 +231,7 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
       }, 1000);
       return () => clearTimeout(timer);
     } else if (showCountdown && countdown === 0) {
-      setShowCountdown(false);
-      setGameActive(true);
-      setGameStartTime(Date.now());
-      setSnipesSpawned(0);
-      if (rng) {
-        setSnipeSchedule(createSnipeSchedule(rng));
-      }
+      handleGameStart();
     }
   }, [countdown, showCountdown, areSpritesLoaded, rng]);
 
@@ -206,6 +256,11 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
 
   const handleGameComplete = async () => {
     if (!user) return;
+    
+    // Clear shiny status
+    await shinyService.clearGameShinyStatus(user.id);
+    setGameShinyStatus(false);
+    setShowSparkles(false);
     
     setWaitingForOpponent(true);
     
@@ -478,8 +533,21 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
 
   if (showCountdown) {
     return (
-      <div className="h-screen pt-20 flex items-center justify-center px-3">
-        <div className="max-w-6xl w-full relative border-4 border-gray-600 rounded-lg overflow-hidden select-none">
+      <div className="h-screen pt-20 flex items-center justify-center px-3 relative">
+        {/* Current User Sprite - positioned in center of left space */}
+        {user && (
+          <div className="absolute left-8 flex items-center justify-center" style={{ width: 'calc(50vw - 384px - 1.5rem)' }}>
+            <UserSprite
+              userId={user.id}
+              size="xlarge"
+              className="flex-shrink-0"
+              forceShiny={gameShinyStatus}
+              showSparkles={showSparkles}
+            />
+          </div>
+        )}
+        
+        <div className="max-w-6xl w-full relative border-4 border-gray-600 rounded-lg overflow-hidden select-none z-10">
           <div className="absolute inset-0 bg-black bg-opacity-25 backdrop-blur-sm flex items-center justify-center z-50 rounded-lg select-none">
             <div className="text-center text-white">
               <div className="text-6xl font-bold animate-pulse">
@@ -549,13 +617,40 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
             )}
           </div>
         </div>
+        
+        {/* Opponent Sprite - positioned in center of right space */}
+        {match.player1_id && match.player2_id && (
+          <div className="absolute right-8 flex items-center justify-center" style={{ width: 'calc(50vw - 384px - 1.5rem)' }}>
+            <UserSprite
+              userId={user?.id === match.player1_id ? match.player2_id : match.player1_id}
+              username={opponentUsername}
+              size="xlarge"
+              className="flex-shrink-0"
+            />
+          </div>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="h-screen pt-20 flex flex-col items-center justify-center px-3 gap-4">
-      <div className="max-w-6xl w-full rounded-2xl bg-gtl-surface-glass backdrop-blur-xl border border-white/20 shadow-2xl p-2 select-none">
+    <div className="h-screen pt-20 flex items-center justify-center px-3 relative">
+      {/* Current User Sprite - positioned in center of left space */}
+      {user && (
+        <div className="absolute left-8 flex items-center justify-center" style={{ width: 'calc(50vw - 384px - 1.5rem)' }}>
+          <UserSprite
+            userId={user.id}
+            size="xlarge"
+            className="flex-shrink-0"
+            forceShiny={gameShinyStatus}
+            showSparkles={showSparkles}
+          />
+        </div>
+      )}
+      
+      {/* Game Area */}
+      <div className="flex flex-col gap-4 flex-1 max-w-6xl z-10">
+        <div className="w-full rounded-2xl bg-gtl-surface-glass backdrop-blur-xl border border-white/20 shadow-2xl p-2 select-none">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="bg-red-600 text-white font-bold py-1 px-2 rounded text-sm">
@@ -587,7 +682,7 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
         </div>
       </div>
       
-      <div className="max-w-6xl w-full border-4 border-gray-600 rounded-lg overflow-hidden select-none">
+        <div className="w-full border-4 border-gray-600 rounded-lg overflow-hidden select-none">
         <div className="bg-gtl-header rounded-t-lg p-2 border-b border-gtl-border">
           <div className="flex items-center justify-between">
             <h1 className="text-sm font-bold text-gtl-text">Global Trade Link - Multiplayer</h1>
@@ -631,6 +726,19 @@ const MultiplayerGlobalTradeLink: React.FC<MultiplayerGlobalTradeLinkProps> = ({
           )}
         </div>
       </div>
+      </div>
+      
+      {/* Opponent Sprite - positioned in center of right space */}
+      {match.player1_id && match.player2_id && (
+        <div className="absolute right-8 flex items-center justify-center" style={{ width: 'calc(50vw - 384px - 1.5rem)' }}>
+          <UserSprite
+            userId={user?.id === match.player1_id ? match.player2_id : match.player1_id}
+            username={opponentUsername}
+            size="xlarge"
+            className="flex-shrink-0"
+          />
+        </div>
+      )}
 
       <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 flex flex-col items-center">
         {notifications.map((notification) => (

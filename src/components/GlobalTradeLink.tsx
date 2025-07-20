@@ -4,6 +4,10 @@ import { generateInitialListings, generateRandomListing } from '../data/mockData
 import { PokemonListing } from '../types/Pokemon';
 import { GameSettings } from '../types/GameSettings';
 import { useSpriteLoading } from '../contexts/SpriteLoadingContext';
+import { useAuth } from '../contexts/AuthContext';
+import UserSprite from './UserSprite';
+import { shinyService } from '../services/shinyService';
+import { supabase } from '../lib/supabase';
 
 const TABS = [
   { id: 'pokemon', label: 'Pokémon Listings' },
@@ -48,6 +52,7 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
   const [activeTab, setActiveTab] = useState('pokemon');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { areSpritesLoaded } = useSpriteLoading();
+  const { user } = useAuth();
   
   // Game state
   const [gameActive, setGameActive] = useState(false);
@@ -95,6 +100,78 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
   
   // Notification state
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  
+  // Shiny hunting state
+  const [gameShinyStatus, setGameShinyStatus] = useState<boolean>(false);
+  const [showSparkles, setShowSparkles] = useState<boolean>(false);
+  const [shinyUnlocked, setShinyUnlocked] = useState<boolean>(false);
+
+  // Handle game start with shiny roll
+  const handleGameStart = async () => {
+    setShowCountdown(false);
+    setGameActive(true);
+    setGameStartTime(Date.now());
+    setSnipesSpawned(0);
+    setSnipeSchedule(createSnipeSchedule());
+
+    // Roll for shiny if user is logged in
+    if (user) {
+      try {
+        // Get user's current selected Pokemon
+        const { data: spriteData } = await supabase
+          .from('user_selected_sprite')
+          .select('pokemon_name')
+          .eq('user_id', user.id)
+          .single();
+
+        const pokemonName = spriteData?.pokemon_name || 'pikachu';
+        
+        // Handle shiny encounter
+        const { isShiny, isNewUnlock } = await shinyService.handleShinyEncounter(
+          user.id, 
+          pokemonName, 
+          'practice'
+        );
+
+        setGameShinyStatus(isShiny);
+        setShinyUnlocked(isNewUnlock);
+
+        if (isShiny) {
+          setShowSparkles(true);
+          // Hide sparkles after 3 seconds
+          setTimeout(() => setShowSparkles(false), 3000);
+
+          if (isNewUnlock) {
+            addNotification(`🎉 New shiny ${pokemonName} unlocked!`, 'success');
+          } else {
+            addNotification(`✨ Shiny ${pokemonName} appeared!`, 'success');
+          }
+        }
+      } catch (error) {
+        console.error('Error handling shiny encounter:', error);
+      }
+    }
+  };
+
+  // Handle game end
+  const handleGameEnd = async () => {
+    setGameActive(false);
+    // Clear active snipes but don't remove them from listings
+    setActiveShinySnipes(new Map());
+    
+    // Clear shiny status
+    if (user) {
+      await shinyService.clearGameShinyStatus(user.id);
+    }
+    setGameShinyStatus(false);
+    setShowSparkles(false);
+    
+    // Call onGameComplete with final stats
+    setGameStats(finalStats => {
+      onGameComplete(finalStats);
+      return finalStats;
+    });
+  };
 
   // Initialize listings on component mount
   useEffect(() => {
@@ -117,11 +194,7 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
       return () => clearTimeout(timer);
     } else if (showCountdown && countdown === 0) {
       // Countdown finished, start the game
-      setShowCountdown(false);
-      setGameActive(true);
-      setGameStartTime(Date.now());
-      setSnipesSpawned(0);
-      setSnipeSchedule(createSnipeSchedule());
+      handleGameStart();
     }
   }, [countdown, showCountdown, areSpritesLoaded]);
 
@@ -133,14 +206,7 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
         setGameTimeLeft(prev => {
           if (prev <= 1) {
             // Game ended
-            setGameActive(false);
-            // Clear active snipes but don't remove them from listings
-            setActiveShinySnipes(new Map());
-            // Call onGameComplete with final stats
-            setGameStats(finalStats => {
-              onGameComplete(finalStats);
-              return finalStats;
-            });
+            handleGameEnd();
             return 0;
           }
           return prev - 1;
@@ -434,8 +500,21 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
   // Display a countdown timer before the game starts
   if (showCountdown) {
     return (
-      <div className="h-screen pt-20 flex items-center justify-center px-3">
-        <div className="max-w-6xl w-full relative border-4 border-gray-600 rounded-lg overflow-hidden select-none">
+      <div className="h-screen pt-20 flex items-center justify-center px-3 relative">
+        {/* User Sprite - positioned in center of left space */}
+        {user && (
+          <div className="absolute left-8 flex items-center justify-center" style={{ width: 'calc(50vw - 384px - 1.5rem)' }}>
+            <UserSprite
+              userId={user.id}
+              size="xlarge"
+              className="flex-shrink-0"
+              forceShiny={gameShinyStatus}
+              showSparkles={showSparkles}
+            />
+          </div>
+        )}
+        
+        <div className="max-w-6xl w-full relative border-4 border-gray-600 rounded-lg overflow-hidden select-none z-10">
           {/* Countdown Overlay */}
           <div className="absolute inset-0 bg-black bg-opacity-25 backdrop-blur-sm flex items-center justify-center z-50 rounded-lg select-none">
             <div className="text-center text-white">
@@ -527,40 +606,55 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
   }
 
   return (
-    <div className="h-screen pt-20 flex flex-col items-center justify-center px-3 gap-4">
-      {/* Game Control Panel */}
-      <div className="max-w-6xl w-full rounded-2xl bg-gtl-surface-glass backdrop-blur-xl border border-white/20 shadow-2xl p-2 select-none">
-        <div className="flex items-center justify-between">
-          <>
-            <div className="flex items-center gap-2">
-              <div className="bg-red-600 text-white font-bold py-1 px-2 rounded text-sm">
-                ⏱️ Time: {formatTime(gameTimeLeft)}
-              </div>
-              <div className="bg-blue-600 text-white font-bold py-1 px-2 rounded text-sm">
-                ⭐ Snipes: {gameStats.shinySnipesCaught}
-              </div>
-              <div className="bg-purple-600 text-white font-bold py-1 px-2 rounded text-sm">
-                🎯 Attempts: {gameStats.totalAttempts}
-              </div>
-              <button 
-                onClick={onCancel}
-                className="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-sm"
-              >
-                ❌ Cancel
-              </button>
-            </div>
-            
-            <div className="text-gtl-text text-sm">
-              <p className="font-semibold">🎯 Snipe Pokémon within {(gameSettings.snipeWindow / 1000).toFixed(1)}s!</p>
-              <p className="text-xs text-gtl-text-dim">
-                Settings: {gameSettings.shinyFrequency}% shiny rate • {gameSettings.pingSimulation}ms ping • {gameSettings.gtlActivity} max/refresh • {(gameSettings.snipeWindow / 1000).toFixed(1)}s window
-              </p>
-            </div>
-          </>
+    <div className="h-screen pt-20 flex items-center justify-center px-3 relative">
+      {/* User Sprite - positioned in center of left space */}
+      {user && (
+        <div className="absolute left-8 flex items-center justify-center" style={{ width: 'calc(50vw - 384px - 1.5rem)' }}>
+          <UserSprite
+            userId={user.id}
+            size="xlarge"
+            className="flex-shrink-0"
+            forceShiny={gameShinyStatus}
+            showSparkles={showSparkles}
+          />
         </div>
-      </div>
+      )}
+      
+      {/* Game Area */}
+      <div className="flex flex-col gap-4 flex-1 max-w-6xl z-10">
+        {/* Game Control Panel */}
+        <div className="w-full rounded-2xl bg-gtl-surface-glass backdrop-blur-xl border border-white/20 shadow-2xl p-2 select-none">
+          <div className="flex items-center justify-between">
+            <>
+              <div className="flex items-center gap-2">
+                <div className="bg-red-600 text-white font-bold py-1 px-2 rounded text-sm">
+                  ⏱️ Time: {formatTime(gameTimeLeft)}
+                </div>
+                <div className="bg-blue-600 text-white font-bold py-1 px-2 rounded text-sm">
+                  ⭐ Snipes: {gameStats.shinySnipesCaught}
+                </div>
+                <div className="bg-purple-600 text-white font-bold py-1 px-2 rounded text-sm">
+                  🎯 Attempts: {gameStats.totalAttempts}
+                </div>
+                <button 
+                  onClick={onCancel}
+                  className="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-sm"
+                >
+                  ❌ Cancel
+                </button>
+              </div>
+              
+              <div className="text-gtl-text text-sm">
+                <p className="font-semibold">🎯 Snipe Pokémon within {(gameSettings.snipeWindow / 1000).toFixed(1)}s!</p>
+                <p className="text-xs text-gtl-text-dim">
+                  Settings: {gameSettings.shinyFrequency}% shiny rate • {gameSettings.pingSimulation}ms ping • {gameSettings.gtlActivity} max/refresh • {(gameSettings.snipeWindow / 1000).toFixed(1)}s window
+                </p>
+              </div>
+            </>
+          </div>
+        </div>
 
-      <div className="max-w-6xl w-full border-4 border-gray-600 rounded-lg overflow-hidden select-none">
+        <div className="w-full border-4 border-gray-600 rounded-lg overflow-hidden select-none">
         {/* Header */}
         <div className="bg-gtl-header rounded-t-lg p-2 border-b border-gtl-border">
           <div className="flex items-center justify-between">
@@ -609,6 +703,7 @@ const GlobalTradeLink: React.FC<GlobalTradeLinkProps> = ({ gameSettings, onGameC
             </div>
           )}
         </div>
+      </div>
       </div>
 
       {/* Notification System */}

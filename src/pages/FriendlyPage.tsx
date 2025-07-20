@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { GameSettings, GAME_PRESETS, DEFAULT_SETTINGS } from '../types/GameSettings';
 import { friendlyService, FriendlyChallenge, FriendlyMatch } from '../services/friendlyService';
+import { supabase } from '../lib/supabase';
 
 type ChallengeLists = {
   incoming: FriendlyChallenge[];
@@ -162,9 +163,18 @@ const FriendlyPage: React.FC = () => {
     }
     setIsLoading(true);
     try {
+      // Get the current user's username from profile
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', user.id)
+        .single();
+      
+      const myUsername = profileData?.username || user.email?.split('@')[0] || 'Player';
+      
       const result = await friendlyService.sendChallenge(
         user.id,
-        user.email?.split('@')[0] || 'Player',
+        myUsername,
         targetUsername.trim(),
         settings
       );
